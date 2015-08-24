@@ -54,6 +54,10 @@ pypet 0.1b.13
 *   New ``'NETLOCK'`` wrap mode, to allow locking over a network and usage
     of servers with a shared home directory.
 
+*   Now the prefixes `f_` and `v_` can be ommited if desired
+
+*   `f_continue` is now named `f_continue_run`
+
 
 pypet 0.1b.12
 

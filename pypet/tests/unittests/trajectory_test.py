@@ -4,6 +4,7 @@ __author__ = 'Robert Meyer'
 
 
 import numpy as np
+import warnings
 
 import sys
 if (sys.version_info < (2, 7, 0)):
@@ -645,7 +646,7 @@ class TrajectoryTest(unittest.TestCase):
     def test_illegal_namings(self):
         self.traj=Trajectory('resulttest2')
 
-        with self.assertRaises(ValueError):
+        with warnings.catch_warnings(record=True) as w:
             self.traj.f_add_parameter('f_get')
 
         with self.assertRaises(ValueError):
@@ -1257,7 +1258,7 @@ class TrajectoryCopyTreeTest(TrajectoryComparator):
         traj2.par['hi.my.name.is.another'] = 43, 'Another'
         traj2.hi.v_annotations['test'] = 'jjj'
         traj2.res['ha.my3.name3.is3.res'] = 555, 55, 7
-        traj2.hi.name.v_annotations['test'] = 'lll'
+        traj2.hi['name'].v_annotations['test'] = 'lll'
 
         traj1._copy_from(traj2)
 
@@ -1272,14 +1273,14 @@ class TrajectoryCopyTreeTest(TrajectoryComparator):
         traj2.v_lazy_adding = True
         traj2.par['hi.my.name.is.another'] = 43, 'Another'
         traj2['ands.moreover'] = 43, 'Another'
-        traj2.ands.test = traj2.name
+        traj2.ands.test = traj2['name']
 
         traj1._copy_from(traj2, with_links=False)
         with self.assertRaises(AttributeError):
             traj1.ands.test
 
         traj1._copy_from(traj2, with_links=True)
-        self.assertTrue(traj1.ands.test is traj1.name)
+        self.assertTrue(traj1.ands.test is traj1['name'])
 
     def test_not_copy_from_node(self):
         traj1 = Trajectory()
@@ -1289,7 +1290,7 @@ class TrajectoryCopyTreeTest(TrajectoryComparator):
         traj2.v_lazy_adding = True
         traj2.par['hi.my.name.is.another'] = 43, 'Another'
         traj2['ands.moreover'] = 43, 'Another'
-        traj2.ands.test = traj2.name
+        traj2.ands.test = traj2['name']
 
         traj1._copy_from(traj2.ands, with_links=False)
         with self.assertRaises(AttributeError):
@@ -1298,7 +1299,7 @@ class TrajectoryCopyTreeTest(TrajectoryComparator):
         self.assertEqual(traj1.moreover[1], 'Another')
 
         traj1._copy_from(traj2.ands, with_links=True)
-        self.assertTrue(traj1.ands.test is traj1.name)
+        self.assertTrue(traj1.ands.test is traj1['name'])
 
     def test_copy_explored(self):
         traj1 = Trajectory()
@@ -1423,9 +1424,9 @@ class TrajectoryCopyTreeTest(TrajectoryComparator):
         traj2.ands.test = traj2.name
 
         traj1._copy_from(traj2)
-        self.assertEqual(traj1.name.resr.resr, 42)
+        self.assertEqual(traj1['name'].resr.resr, 42)
 
-        self.assertTrue(traj1.name.resr is not traj2.name.resr)
+        self.assertTrue(traj1['name'].resr is not traj2.name.resr)
 
 class TrajectoryFindTest(unittest.TestCase):
 

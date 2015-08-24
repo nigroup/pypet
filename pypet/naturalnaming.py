@@ -1378,11 +1378,6 @@ class NaturalNamingInterface(HasLogger):
                                '(use only [A-Za-z0-9_-]),' % \
                                (faulty_names, split_name)
 
-            if split_name in self._not_admissible_names:
-                faulty_names = '%s `%s` is a method/attribute of the ' \
-                               'trajectory/treenode/naminginterface,' % \
-                               (faulty_names, split_name)
-
             if split_name[0] == '_':
                 faulty_names = '%s `%s` starts with a leading underscore,' % (
                     faulty_names, split_name)
@@ -1391,6 +1386,13 @@ class NaturalNamingInterface(HasLogger):
                 if split_name not in self._root_instance._wildcard_keys:
                     faulty_names = '%s `%s` contains `$` but has no associated ' \
                                    'wildcard function,' % (faulty_names, split_name)
+
+            if split_name in self._not_admissible_names:
+                self._logger.warning('`%s` is a method/attribute of the '
+                                     'trajectory/treenode/naminginterface, '
+                                     'you may not be able to access the data via '
+                                     'natural naming but only by `[]` bracket '
+                                     'notation.' % split_name)
 
         name = split_names[-1]
         location = '.'.join(split_names[:-1])
