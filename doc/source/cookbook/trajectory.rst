@@ -12,6 +12,12 @@ comment attribute and
 ``myresult.f_set(mydata=42)`` is the function for adding data to the result container.
 Whereas ``myresult.mydata`` might refer to a data item named ``mydata`` added by the user.
 
+The prefixes are not mandatory and can be ommited. So ``myresult.comment`` works
+as well as ``myresult.v_comment`` or ``traj.f_idx_to_run(42)`` is equivalent to
+``traj.idx_to_run(42)``. It is recommended to only use one of the two schemes and not
+intermix function and property calls with prefixes (``f_`` and ``v_``) and without for
+better readable code.
+
 Moreover, the following abbreviations are supported by *pypet* for interaction with a
 :class:`~pypet.trajectory.Trajectory`:
 
@@ -1070,7 +1076,7 @@ you can access this via :attr:`~pypet.trajectory.Trajectory.v_idx` of your traje
 As a proper informatics nerd, if you have N runs, than your first run's index is 0
 and the last is indexed as N-1! Also each run has a name ``run_XXXXXXXX`` where `XXXXXXXX` is the
 index of the run with some leading zeros, like ``run_00000007``. You can access the name
-via the :attr:`~pypet.trajectory.Trajectory.v_crun` property.
+via the :attr:`~pypet.trajectory.Trajectory.v_crun_name` property.
 
 During the execution of individual runs the functionality of your trajectory is reduced:
 

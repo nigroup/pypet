@@ -33,10 +33,10 @@ class ParameterTest(TrajectoryComparator):
             param._stored = True
 
             with warnings.catch_warnings(record=True) as w:
-                param.f_unlock()
-                if param.f_has_range():
+                param.unlock()
+                if param.has_range():
                     param._shrink()
-                param.f_set(3)
+                param.set(3)
 
     def test_type_error_for_not_supported_data(self):
 
@@ -55,14 +55,14 @@ class ParameterTest(TrajectoryComparator):
                           filename = filename, overwrite_file=True)
 
         for param in self.param.values():
-            traj.f_add_parameter(param)
+            traj.add_parameter(param)
 
-        traj.f_store()
+        traj.store()
 
         new_traj = Trajectory(name=traj_name, dynamic_imports=self.dynamic_imports,
                               filename = filename)
 
-        new_traj.f_load(load_data=2)
+        new_traj.load(load_data=2)
         self.compare_trajectories(traj, new_traj)
 
     def test_type_error_for_exploring_if_range_does_not_match(self):
@@ -81,7 +81,7 @@ class ParameterTest(TrajectoryComparator):
     def test_cannot_expand_and_not_explore_throwing_type_error(self):
 
         for param in self.param.values():
-            if not param.f_has_range():
+            if not param.has_range():
                 with self.assertRaises(TypeError):
                     param._expand([12,33])
             else:
@@ -94,10 +94,10 @@ class ParameterTest(TrajectoryComparator):
                 # Cause all warnings to always be triggered.
                 warnings.simplefilter("always")
                 # Trigger a warning.
-                self.assertEqual(param.v_parameter, param.v_is_parameter)
-                self.assertEqual(param.v_leaf, param.v_is_leaf)
-                self.assertEqual(param.f_is_root(), param.v_is_root)
-                self.assertEqual(param.v_fast_accessible, param.f_supports_fast_access())
+                self.assertEqual(param.parameter, param.is_parameter)
+                self.assertEqual(param.leaf, param.is_leaf)
+                self.assertEqual(param.is_root(), param.is_root)
+                self.assertEqual(param.fast_accessible, param.supports_fast_access())
                 # Verify some things
                 assert len(warnings_list) == 4
                 for warning in warnings_list:
@@ -107,11 +107,11 @@ class ParameterTest(TrajectoryComparator):
 
     def test_equal_values(self):
         for param in self.param.values():
-            self.assertTrue(param._equal_values(param.f_get(),param.f_get()))
+            self.assertTrue(param._equal_values(param.get(),param.get()))
 
-            self.assertFalse(param._equal_values(param.f_get(),23432432432))
+            self.assertFalse(param._equal_values(param.get(),23432432432))
 
-            self.assertFalse(param._equal_values(param.f_get(),ChainMap()))
+            self.assertFalse(param._equal_values(param.get(),ChainMap()))
 
             if not isinstance(param, PickleParameter):
                 with self.assertRaises(TypeError):
@@ -121,14 +121,14 @@ class ParameterTest(TrajectoryComparator):
     def test_parameter_locking(self):
         for param in self.param.values():
 
-            if not param.v_explored:
-                self.assertFalse(param.v_locked, 'Param %s is locked' % param.v_full_name)
-                param.f_lock()
+            if not param.explored:
+                self.assertFalse(param.locked, 'Param %s is locked' % param.full_name)
+                param.lock()
             else:
-                self.assertTrue(param.v_locked, 'Param %s is locked' % param.v_full_name)
+                self.assertTrue(param.locked, 'Param %s is locked' % param.full_name)
 
             with self.assertRaises(pex.ParameterLockedException):
-                param.f_set(3)
+                param.set(3)
 
             with self.assertRaises(pex.ParameterLockedException):
                 param._explore([3])
@@ -140,32 +140,32 @@ class ParameterTest(TrajectoryComparator):
                 param._shrink()
 
             with self.assertRaises(pex.ParameterLockedException):
-                param.f_empty()
+                param.empty()
 
     def test_param_accepts_not_unsupported_data(self):
 
         for param in self.param.values():
             if not isinstance(param, PickleParameter):
                 with self.assertRaises(TypeError):
-                    param.f_set(ChainMap())
+                    param.set(ChainMap())
 
     def test_parameter_access_throws_ValueError(self):
 
         for name,param in self.param.items():
             if name in self.explore_dict:
-                self.assertTrue(param.f_has_range())
+                self.assertTrue(param.has_range())
 
                 with self.assertRaises(ValueError):
                     param._set_parameter_access(1232121321321)
 
     def test_values_of_same_type(self):
         for param in self.param.values():
-            self.assertTrue(param._values_of_same_type(param.f_get(),param.f_get()))
+            self.assertTrue(param._values_of_same_type(param.get(),param.get()))
 
-            if not isinstance(param.f_get(), int):
-                self.assertFalse(param._values_of_same_type(param.f_get(),23432432432))
+            if not isinstance(param.get(), int):
+                self.assertFalse(param._values_of_same_type(param.get(),23432432432))
 
-            self.assertFalse(param._values_of_same_type(param.f_get(),ChainMap()))
+            self.assertFalse(param._values_of_same_type(param.get(),ChainMap()))
 
             if not isinstance(param, PickleParameter):
                 with self.assertRaises(TypeError):
@@ -177,9 +177,9 @@ class ParameterTest(TrajectoryComparator):
                 # Cause all warnings to always be triggered.
                 warnings.simplefilter("always")
                 # Trigger a warning.
-                self.assertEqual(param.f_is_array(), param.f_has_range())
-                if param.f_has_range():
-                    self.assertEqual(id(param.f_get_array()),id(param.f_get_range()))
+                self.assertEqual(param.is_array(), param.has_range())
+                if param.has_range():
+                    self.assertEqual(id(param.get_array()),id(param.get_range()))
                 # Verify some things
                 assert len(warnings_list) == 1 or len(warnings_list)==2
                 for warning in warnings_list:
@@ -190,9 +190,9 @@ class ParameterTest(TrajectoryComparator):
 
     def test_meta_settings(self):
         for key, param in self.param.items():
-            self.assertEqual(param.v_full_name, self.location+'.'+key)
-            self.assertEqual(param.v_name, key)
-            self.assertEqual(param.v_location, self.location)
+            self.assertEqual(param.full_name, self.location+'.'+key)
+            self.assertEqual(param.name, key)
+            self.assertEqual(param.location, self.location)
 
 
     def make_params(self):
@@ -235,7 +235,7 @@ class ParameterTest(TrajectoryComparator):
     def test_get_item(self):
         for paramname in self.explore_dict:
             param = self.param[paramname]
-            val1=param.f_get_range()[1]
+            val1=param.get_range()[1]
             val2=param[1]
             self.assertTrue(comp.nested_equal(val1,val2), '%s != %s' % (str(val1),str(val2)))
 
@@ -243,7 +243,7 @@ class ParameterTest(TrajectoryComparator):
         for paramname in self.param:
             param = self.param[paramname]
             val1=param.data
-            val2=param.f_get()
+            val2=param.get()
             self.assertTrue(comp.nested_equal(val1,val2), '%s != %s' % (str(val1),str(val2)))
             val3=param['data']
             self.assertTrue(comp.nested_equal(val3,val2), '%s != %s' % (str(val3),str(val2)))
@@ -253,7 +253,7 @@ class ParameterTest(TrajectoryComparator):
             self.assertTrue(comp.nested_equal(val1,val2), '%s != %s' % (str(val1),str(val2)))
             val3=param['default']
             self.assertTrue(comp.nested_equal(val3,val2), '%s != %s' % (str(val3),str(val2)))
-            val4=param.f_get_default()
+            val4=param.get_default()
             self.assertTrue(comp.nested_equal(val4,val2), '%s != %s' % (str(val4),str(val2)))
             val5 = param[-1]
             self.assertTrue(comp.nested_equal(val5,val2), '%s != %s' % (str(val5),str(val2)))
@@ -288,7 +288,7 @@ class ParameterTest(TrajectoryComparator):
 
             if not key in self.explore_dict:
                 self.param[key]._restore_default()
-                param_val = self.param[key].f_get()
+                param_val = self.param[key].get()
                 self.assertTrue(np.all(repr(val) == repr(param_val)),'%s != %s'  %(str(val),str(param_val)))
 
 
@@ -302,23 +302,23 @@ class ParameterTest(TrajectoryComparator):
 
                 #Test wron param type
                 with self.assertRaises(TypeError):
-                    param.f_unlock()
+                    param.unlock()
                     param._expand([1,2,3])
 
 
     def test_rename(self):
         for name,param in self.param.items():
             param._rename('test.test.wirsing')
-            self.assertTrue(param.v_name=='wirsing')
-            self.assertTrue(param.v_full_name=='test.test.wirsing')
-            self.assertTrue(param.v_location=='test.test')
+            self.assertTrue(param.name=='wirsing')
+            self.assertTrue(param.full_name=='test.test.wirsing')
+            self.assertTrue(param.location=='test.test')
 
 
 
     def test_expanding(self):
         for name,param in self.param.items():
             if name in self.explore_dict:
-                param.f_unlock()
+                param.unlock()
                 param._expand(self.explore_dict[name])
 
                 self.assertTrue(len(param) == 2*len(self.explore_dict[name]),
@@ -334,15 +334,15 @@ class ParameterTest(TrajectoryComparator):
                 assert isinstance(param, BaseParameter)
                 param._set_parameter_access(idx)
 
-                self.assertTrue(np.all(repr(param.f_get())==repr(val))),'%s != %s'%( str(param.f_get()),str(val))
+                self.assertTrue(np.all(repr(param.get())==repr(val))),'%s != %s'%( str(param.get()),str(val))
 
-                param_val = self.param[key].f_get_range()[idx]
+                param_val = self.param[key].get_range()[idx]
                 self.assertTrue(np.all(str(val) == str(param_val)),'%s != %s'  %(str(val),str(param_val)))
 
             param._restore_default()
-            self.assertTrue(param.v_explored and param.f_has_range(), 'Error for %s' % key)
+            self.assertTrue(param.explored and param.has_range(), 'Error for %s' % key)
             val = self.data[key]
-            self.assertTrue(np.all(repr(param.f_get())==repr(val))),'%s != %s'%( str(param.f_get()),str(val))
+            self.assertTrue(np.all(repr(param.get())==repr(val))),'%s != %s'%( str(param.get()),str(val))
 
 
     def test_storage_and_loading(self):
@@ -352,7 +352,7 @@ class ParameterTest(TrajectoryComparator):
 
             # Due to smart storing the storage dict should be small and only contain 5 items or less
             # 1 for data, 1 for reference, and 3 for the array/matrices/items
-            if param.f_has_range():
+            if param.has_range():
                 if isinstance(param,(ArrayParameter, PickleParameter)) and \
                         not isinstance(param, SparseParameter):
                     self.assertTrue(len(store_dict)<7)
@@ -364,8 +364,8 @@ class ParameterTest(TrajectoryComparator):
 
             constructor = param.__class__
 
-            param.f_unlock()
-            param.f_empty()
+            param.unlock()
+            param.empty()
 
             param = constructor('')
 
@@ -385,8 +385,8 @@ class ParameterTest(TrajectoryComparator):
 
     def test_pickling_without_multiprocessing(self):
         for key, param in self.param.items():
-            param.f_unlock()
-            param.v_full_copy=True
+            param.unlock()
+            param.full_copy=True
 
             dump = pickle.dumps(param)
 
@@ -408,8 +408,8 @@ class ParameterTest(TrajectoryComparator):
         self.test_exploration()
 
         for key, param in self.param.items():
-            param.f_unlock()
-            param.v_full_copy=False
+            param.unlock()
+            param.full_copy=False
 
             dump = pickle.dumps(param)
 
@@ -420,7 +420,7 @@ class ParameterTest(TrajectoryComparator):
             self.param[key] = newParam
 
             if key in self.explore_dict:
-                self.assertTrue(not newParam.f_has_range() and newParam.v_explored)
+                self.assertTrue(not newParam.has_range() and newParam.explored)
 
         #self.test_exploration()
 
@@ -433,35 +433,35 @@ class ParameterTest(TrajectoryComparator):
     def test_resizing_and_deletion(self):
 
         for key, param in self.param.items():
-            param.f_lock()
+            param.lock()
             with self.assertRaises(pex.ParameterLockedException):
-                 param.f_set(42)
+                 param.set(42)
 
             with self.assertRaises(pex.ParameterLockedException):
                 param._shrink()
 
 
-            param.f_unlock()
+            param.unlock()
 
 
             if len(param)> 1:
-                self.assertTrue(param.f_has_range())
+                self.assertTrue(param.has_range())
 
-            if param.f_has_range():
+            if param.has_range():
                 self.assertTrue(len(param)>1)
                 param._shrink()
 
             self.assertTrue(len(param) == 1)
 
-            self.assertFalse(param.f_is_empty())
-            self.assertFalse(param.f_has_range())
+            self.assertFalse(param.is_empty())
+            self.assertFalse(param.has_range())
 
 
 
-            param.f_empty()
+            param.empty()
 
-            self.assertTrue(param.f_is_empty())
-            self.assertFalse(param.f_has_range())
+            self.assertTrue(param.is_empty())
+            self.assertFalse(param.has_range())
 
 class ArrayParameterTest(ParameterTest):
 
@@ -555,11 +555,11 @@ class PickleParameterTest(ParameterTest):
 
     def test_meta_settings(self):
         for key, param in self.param.items():
-            self.assertEqual(param.v_full_name, self.location+'.'+key)
-            self.assertEqual(param.v_name, key)
-            self.assertEqual(param.v_location, self.location)
-            self.assertEqual(param.v_protocol, self.protocols[key], '%d != %d' %
-                                                        (param.v_protocol, self.protocols[key]))
+            self.assertEqual(param.full_name, self.location+'.'+key)
+            self.assertEqual(param.name, key)
+            self.assertEqual(param.location, self.location)
+            self.assertEqual(param.protocol, self.protocols[key], '%d != %d' %
+                                                        (param.protocol, self.protocols[key]))
 
     def explore(self):
 
@@ -687,8 +687,8 @@ class ResultTest(TrajectoryComparator):
         self.results['test.res.kwargs']=self.Constructor('test.res.kwargs')
         self.results['test.res.setitem']=self.Constructor('test.res.setitem')
 
-        self.results['test.res.args'].f_set(*compat.listvalues(self.data))
-        self.results['test.res.kwargs'].f_set(**self.data)
+        self.results['test.res.args'].set(*compat.listvalues(self.data))
+        self.results['test.res.kwargs'].set(**self.data)
 
         for key, value in self.data.items():
             self.results['test.res.setitem'][key]=value
@@ -699,11 +699,11 @@ class ResultTest(TrajectoryComparator):
         res[0] = 'Hi'
         res[777] = 777
 
-        self.assertTrue(getattr(res, res.v_name) == 'Hi')
-        self.assertTrue(res.f_get(0) == 'Hi')
-        self.assertTrue(getattr(res, res.v_name + '_777') == 777)
+        self.assertTrue(getattr(res, res.name) == 'Hi')
+        self.assertTrue(res.get(0) == 'Hi')
+        self.assertTrue(getattr(res, res.name + '_777') == 777)
         self.assertTrue(res[777] == 777)
-        self.assertTrue(res.f_get(777) == 777)
+        self.assertTrue(res.get(777) == 777)
 
         self.assertTrue(0 in res)
         self.assertTrue(777 in res)
@@ -718,7 +718,7 @@ class ResultTest(TrajectoryComparator):
     def test_iter(self):
         for res in self.results.values():
             keyset1 = set([x for x in res])
-            keyset2 = set(res.f_to_dict().keys())
+            keyset2 = set(res.to_dict().keys())
             self.assertTrue(keyset1 == keyset2)
 
 
@@ -735,7 +735,7 @@ class ResultTest(TrajectoryComparator):
     def test_f_get_many_items(self):
         for res in self.results.values():
             if 'integer' in res and 'float' in res:
-                myreslist = res.f_get('integer', 'float')
+                myreslist = res.get('integer', 'float')
                 self.assertEqual([self.data['integer'], self.data['float']],myreslist)
 
     def test_getattr_and_setattr(self):
@@ -755,7 +755,7 @@ class ResultTest(TrajectoryComparator):
         for res in self.results.values():
             if len(res._data)==1:
                 val1=res.data
-                val2=res.f_get()
+                val2=res.get()
                 self.assertTrue(comp.nested_equal(val1,val2), '%s != %s' % (str(val1),str(val2)))
                 val3=res['data']
                 self.assertTrue(comp.nested_equal(val3,val2), '%s != %s' % (str(val3),str(val2)))
@@ -765,19 +765,19 @@ class ResultTest(TrajectoryComparator):
                 with self.assertRaises(AttributeError):
                     res['data']
                 with self.assertRaises(ValueError):
-                    res.f_get()
+                    res.get()
 
     def test_f_get_errors(self):
 
         res = Result('test')
 
         with self.assertRaises(AttributeError):
-            res.f_get()
+            res.get()
 
-        res.f_set(1,2,42)
+        res.set(1,2,42)
 
         with self.assertRaises(ValueError):
-            res.f_get()
+            res.get()
 
     def test_contains(self):
         if 'test.res.kwargs' in self.results:
@@ -789,17 +789,17 @@ class ResultTest(TrajectoryComparator):
     def test_deletion(self):
 
         for res in self.results.values():
-            for key in res.f_to_dict():
+            for key in res.to_dict():
                 delattr(res,key)
 
-            self.assertTrue(res.f_is_empty())
+            self.assertTrue(res.is_empty())
 
     def test_set_numbering(self):
         int_list = list(range(10))
         for res in self.results.values():
-            res.f_set(*int_list)
+            res.set(*int_list)
 
-            self.assertEqual(res.f_get(*int_list), int_list)
+            self.assertEqual(res.get(*int_list), int_list)
 
     def test_dir(self):
         res = self.results['test.res.on_constructor']
@@ -815,8 +815,8 @@ class ResultTest(TrajectoryComparator):
 
         dirlist = dir(res)
 
-        self.assertTrue(res.v_name in dirlist)
-        self.assertTrue('%s_1' % res.v_name in dirlist)
+        self.assertTrue(res.name in dirlist)
+        self.assertTrue('%s_1' % res.name in dirlist)
 
     def setUp(self):
 
@@ -868,31 +868,31 @@ class ResultTest(TrajectoryComparator):
                           filename = filename, overwrite_file=True)
 
         for res in self.results.values():
-            traj.f_add_result(res)
+            traj.add_result(res)
 
-        traj.f_store()
+        traj.store()
 
         new_traj = Trajectory(name=traj_name, dynamic_imports=self.dynamic_imports,
                               filename = filename)
 
-        new_traj.f_load(load_data=2)
+        new_traj.load(load_data=2)
         self.compare_trajectories(traj, new_traj)
 
 
     def test_rename(self):
         for name,res in self.results.items():
             res._rename('test.test.wirsing')
-            self.assertTrue(res.v_name=='wirsing')
-            self.assertTrue(res.v_full_name=='test.test.wirsing')
-            self.assertTrue(res.v_location=='test.test')
+            self.assertTrue(res.name=='wirsing')
+            self.assertTrue(res.full_name=='test.test.wirsing')
+            self.assertTrue(res.location=='test.test')
 
     def test_emptying(self):
         for res in self.results.values():
 
-            self.assertFalse(res.f_is_empty())
-            res.f_empty()
+            self.assertFalse(res.is_empty())
+            res.empty()
 
-            self.assertTrue(res.f_is_empty())
+            self.assertTrue(res.is_empty())
 
 
     def test_string_representation(self):
@@ -918,32 +918,32 @@ class ResultTest(TrajectoryComparator):
                 return_string = return_string[0:-2] # Delete the last `, `
 
 
-            valstr = res.f_val_to_str()
+            valstr = res.val_to_str()
             self.assertTrue(return_string==valstr)
             self.assertTrue(len(valstr)<=pypetconstants.HDF5_STRCOL_MAX_VALUE_LENGTH)
 
 
     def test_meta_settings(self):
         for key, res in self.results.items():
-            self.assertEqual(res.v_full_name, key)
-            self.assertEqual(res.v_name, key.split('.')[-1])
-            self.assertEqual(res.v_location, '.'.join(key.split('.')[0:-1]))
+            self.assertEqual(res.full_name, key)
+            self.assertEqual(res.name, key.split('.')[-1])
+            self.assertEqual(res.location, '.'.join(key.split('.')[0:-1]))
 
     def test_natural_naming(self):
         for res_name,res in self.results.items():
-            for key, val1 in res.f_to_dict().items():
+            for key, val1 in res.to_dict().items():
                 val2 = getattr(res, key)
                 self.assertTrue(comp.nested_equal(val1,val2))
 
     def test_get_item(self):
         for res_name,res in self.results.items():
-            for key, val1 in res.f_to_dict().items():
+            for key, val1 in res.to_dict().items():
                 val2 = res[key]
                 self.assertTrue(comp.nested_equal(val1,val2))
 
     def test_f_to_dict_no_copy(self):
         for res_name,res in self.results.items():
-            for key, val1 in res.f_to_dict(copy=False).items():
+            for key, val1 in res.to_dict(copy=False).items():
                 val2 = res[key]
                 self.assertTrue(comp.nested_equal(val1,val2))
 
@@ -956,7 +956,7 @@ class ResultTest(TrajectoryComparator):
     def test_reject_outer_data_structure(self):
         for res in self.results.values():
             with self.assertRaises(TypeError):
-                res.f_set(doesntwork=ChainMap({},{}))
+                res.set(doesntwork=ChainMap({},{}))
 
     def test_the_insertion_made_implicetly_in_setUp(self):
         for key, val1 in self.data.items():
@@ -1020,10 +1020,10 @@ class PickleResultTest(ResultTest):
 
     def test_meta_settings(self):
         for key, res in self.results.items():
-            self.assertEqual(res.v_full_name, key)
-            self.assertEqual(res.v_name, key.split('.')[-1])
-            self.assertEqual(res.v_location, '.'.join(key.split('.')[0:-1]))
-            self.assertEqual(res.v_protocol, self.protocols[key])
+            self.assertEqual(res.full_name, key)
+            self.assertEqual(res.name, key.split('.')[-1])
+            self.assertEqual(res.location, '.'.join(key.split('.')[0:-1]))
+            self.assertEqual(res.protocol, self.protocols[key])
 
     def make_results(self):
         self.results= {}
@@ -1035,8 +1035,8 @@ class PickleResultTest(ResultTest):
                         'test.res.args':1,
                         'test.res.kwargs':2}
 
-        self.results['test.res.args'].f_set(*compat.listvalues(self.data))
-        self.results['test.res.kwargs'].f_set(**self.data)
+        self.results['test.res.args'].set(*compat.listvalues(self.data))
+        self.results['test.res.kwargs'].set(**self.data)
 
 class SparseResultTest(ResultTest):
 
@@ -1071,19 +1071,19 @@ class SparseResultTest(ResultTest):
         for res in self.results.values():
             data_dict = {'val'+SparseResult.IDENTIFIER:42}
             with self.assertRaises(AttributeError):
-                res.f_set(**data_dict)
+                res.set(**data_dict)
 
     def make_results(self):
         self.results= {}
         self.results['test.res.on_constructor']=self.Constructor('test.res.on_constructor',
                                                                   protocol=0, **self.data)
         self.results['test.res.args']=self.Constructor('test.res.args')
-        self.results['test.res.args'].v_protocol=1
+        self.results['test.res.args'].protocol=1
 
         self.results['test.res.kwargs']=self.Constructor('test.res.kwargs', protocol=2)
 
-        self.results['test.res.args'].f_set(*compat.listvalues(self.data))
-        self.results['test.res.kwargs'].f_set(**self.data)
+        self.results['test.res.args'].set(*compat.listvalues(self.data))
+        self.results['test.res.kwargs'].set(**self.data)
 
 
 if __name__ == '__main__':

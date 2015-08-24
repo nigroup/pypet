@@ -61,7 +61,7 @@ class BrianParameterTest(ParameterTest):
         ## Explore the parameter:
         for key, vallist in self.explore_dict.items():
             self.param[key]._explore(vallist)
-            self.assertTrue(self.param[key].v_explored and self.param[key].f_has_range())
+            self.assertTrue(self.param[key].explored and self.param[key].has_range())
 
 
 @unittest.skipIf(brian is None, 'Can only be run with brian!')
@@ -73,7 +73,7 @@ class BrianParameterStringModeTest(BrianParameterTest):
         self.param = {}
         for key, val in self.data.items():
             self.param[key] = BrianParameter(self.location+'.'+key, val, comment=key)
-            self.param[key].v_storage_mode = BrianParameter.STRING_MODE
+            self.param[key].storage_mode = BrianParameter.STRING_MODE
 
 
 @unittest.skipIf(brian is None, 'Can only be run with brian!')
@@ -89,7 +89,7 @@ class BrianResultTest(ResultTest):
         for res in self.results.values():
             data_dict = {'val'+BrianResult.IDENTIFIER:42}
             with self.assertRaises(AttributeError):
-                res.f_set(**data_dict)
+                res.set(**data_dict)
 
 
     def setUp(self):
@@ -114,7 +114,7 @@ class BrianResultStringModeTest(BrianResultTest):
         super(BrianResultStringModeTest, self).setUp()
 
         for res in self.results.values():
-            res.v_storage_mode=BrianResult.STRING_MODE
+            res.storage_mode=BrianResult.STRING_MODE
 
 if __name__ == '__main__':
     opt_args = parse_args()

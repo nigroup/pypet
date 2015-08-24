@@ -334,7 +334,7 @@ because most of the time the default settings are sufficient.
     **IMPORTANT**: If you use immediate post-processing, the results that are passed to
     your post-processing function are not sorted by their run indices but by finishing time!
 
-* ``continuable``
+* ``resumable``
 
     Whether the environment should take special care to allow to resume or continue
     crashed trajectories. Default is ``False``.
@@ -352,7 +352,7 @@ because most of the time the default settings are sufficient.
     (see below).
     Using this data you can continue crashed trajectories.
 
-    In order to resume trajectories use :func:`~pypet.environment.Environment.f_continue`.
+    In order to resume trajectories use :func:`~pypet.environment.Environment.f_resume`.
 
     Your individual single runs must be completely independent of one
     another to allow continuing to work. Thus, they should **not** be based on shared data
@@ -365,14 +365,14 @@ because most of the time the default settings are sufficient.
 
     .. _dill: https://pypi.python.org/pypi/dill
 
-* ``continue_folder``
+* ``resume_folder``
 
-    The folder where the continue files will be placed. Note that *pypet* will create
+    The folder where the resume files will be placed. Note that *pypet* will create
     a sub-folder with the name of the environment.
 
-* ``delete_continue``
+* ``delete_resume``
 
-    If true, *pypet* will delete the continue files after a successful simulation.
+    If true, *pypet* will delete the resume files after a successful simulation.
 
 * ``storage_service``
 
@@ -963,7 +963,7 @@ which are done as soon as the environment is created, a sumatra record is only c
 stored if you actually perform single runs. Hence, records are stored if you use one of following
 three functions:
 :func:`~pypet.environment.Environment.f_run`, or :func:`~pypet.environment.Environment.f_pipeline`,
-or :func:`~pypet.environment.Environment.f_continue` and your simulation succeeds and does
+or :func:`~pypet.environment.Environment.f_resume` and your simulation succeeds and does
 not crash.
 
 
@@ -1365,9 +1365,9 @@ In order to use this feature you need dill_.
 Careful, dill_ is rather experimental and still in alpha status!
 
 If all of your data can be handled by dill_,
-you can use the config parameter ``continuable=True`` passed
+you can use the config parameter ``resumable=True`` passed
 to the :class:`~pypet.environment.Environment` constructor.
-This will create a continue directory (name specified by you via ``continue_folder``)
+This will create a resume directory (name specified by you via ``resume_folder``)
 and a sub-folder with the name of the trajectory. This folder is your safety net
 for data loss due to a computer crash. If for whatever reason your day or week-long
 lasting simulation was interrupted, you can resume it
@@ -1376,15 +1376,15 @@ HDF5 file is not corrupted and for interruptions due
 to computer crashes, like power failure etc. If your
 simulations crashed due to errors in your code, there is no way to restore that!
 
-You can resume a crashed trajectory via :func:`~pypet.environment.Environment.f_continue`
-with the name of the continue folder (not the subfolder) and the name of the trajectory:
+You can resume a crashed trajectory via :func:`~pypet.environment.Environment.f_resume`
+with the name of the resume folder (not the subfolder) and the name of the trajectory:
 
 .. code-block:: python
 
     env = Environment(continuable=True)
 
-    env.f_continue(trajectory_name='my_traj_2015_10_21_04h29m00s',
-                            continue_folder='./experiments/continue/')
+    env.f_resume(trajectory_name='my_traj_2015_10_21_04h29m00s',
+                            resume_folder='./experiments/resume/')
 
 
 The neat thing here is, that you create a novel environment for the continuation. Accordingly,
@@ -1400,7 +1400,7 @@ or the arguments passed to your simulation function are altered between individu
 For instance, if you use multiprocessing
 and you want to write computed data into a shared data list
 (like ``multiprocessing.Manager().list()``, see :ref:`example-12`),
-these changes will be lost and cannot be captured by the continue snapshots.
+these changes will be lost and cannot be captured by the resume snapshots.
 
 A work around here would be to not manipulate the arguments but pass these values as results
 of your top-level simulation function. Everything that is returned by your top-level function
@@ -1408,7 +1408,7 @@ will be part of the snapshots and can be reconstructed after a crash.
 
 Continuing *might not* work if you use post-processing that expands the trajectory.
 Since you are not limited in how you manipulate the trajectory within your post-processing,
-there are potentially many side effects that remain undetected by the continue snapshots.
+there are potentially many side effects that remain undetected by the resume snapshots.
 You can try to use both together, but there is **no** guarantee whatsoever that continuing a
 crashed trajectory and post-processing with expanding will work together.
 

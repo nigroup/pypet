@@ -99,59 +99,59 @@ def add_params(traj,param_dict):
     for key, val in flat_dict.items():
         if isinstance(val, (np.ndarray, tuple)) or (isinstance(val, list) and
                                                         (len(val) < 4 or val[3] != ())):
-            traj.f_add_parameter(ArrayParameter,key,val, comment='comment')
+            traj.add_parameter(ArrayParameter,key,val, comment='comment')
         elif isinstance(val, (str,bool,float)+compat.int_types):
-            traj.f_add_parameter(Parameter,key,val, comment='Im a comment!')
+            traj.add_parameter(Parameter,key,val, comment='Im a comment!')
         elif spsp.isspmatrix(val):
-            traj.f_add_parameter(SparseParameter,key,val, comment='comment').v_annotations.f_set(
+            traj.add_parameter(SparseParameter,key,val, comment='comment').annotations.set(
                 **{'Name':key,'Val' :str(val),'Favorite_Numbers:':[1,2,3],
                                  'Second_Fav':np.array([43.0,43.0])})
         elif isinstance(val,list):
             # The last item of the list `val` is an int between 0 and 2, we can use it as a
             # protocol read out to test all protocols
-            traj.f_add_parameter(PickleParameter,key,val, comment='Im a comment!', protocol=val[-1])
+            traj.add_parameter(PickleParameter,key,val, comment='Im a comment!', protocol=val[-1])
         else:
             raise RuntimeError('You shall not pass, %s is %s!' % (str(val),str(type(val))))
 
 
-    traj.f_add_derived_parameter('Another.String', 'Hi, how are you?', comment='test1')
-    traj.f_add_derived_parameter('Another.StringGroup.$', 'too bad!?', comment='test2')
-    traj.f_add_derived_parameter('Another.$set.$.String', 'Really?', comment='test3')
-    traj.f_add_derived_parameter('Another.crun.String2', 'Really, again?', comment='test4')
+    traj.add_derived_parameter('Another.String', 'Hi, how are you?', comment='test1')
+    traj.add_derived_parameter('Another.StringGroup.$', 'too bad!?', comment='test2')
+    traj.add_derived_parameter('Another.$set.$.String', 'Really?', comment='test3')
+    traj.add_derived_parameter('Another.crun.String2', 'Really, again?', comment='test4')
 
 
-    traj.f_add_result('Peter_Jackson',np.str(['is','full','of','suboptimal ideas']),
+    traj.add_result('Peter_Jackson',np.str(['is','full','of','suboptimal ideas']),
                       comment='Only my opinion bro!',)
 
-    traj.results.f_add_leaf('Test', 42, comment='NC')
-    traj.f_add_group('derived_parameters.uo', comment='Yeah, this is unsuals')
-    traj.dpar.f_add_leaf('uo.adsad', 3333, comment='Yo')
-    traj.derived_parameters.f_add_leaf('Test2', 42, comment='sfsdf')
+    traj.results.add_leaf('Test', 42, comment='NC')
+    traj.add_group('derived_parameters.uo', comment='Yeah, this is unsuals')
+    traj.dpar.add_leaf('uo.adsad', 3333, comment='Yo')
+    traj.derived_parameters.add_leaf('Test2', 42, comment='sfsdf')
 
-    traj.par.f_add_leaf('er.Test3', 42, comment='sdfds')
+    traj.par.add_leaf('er.Test3', 42, comment='sdfds')
 
     for irun in range(13):
-        traj.f_add_leaf('testleaf%d' % irun, 42, comment='f')
+        traj.add_leaf('testleaf%d' % irun, 42, comment='f')
 
-    traj.par.f_add_group('Empty', comment='Notting!')
+    traj.par.add_group('Empty', comment='Notting!')
 
-    traj.f_add_group('imgeneric.bitch', comment='Generic_Group')
-    traj.imgeneric.f_add_leaf('gentest', 'fortytwo', comment='Oh yeah!')
+    traj.add_group('imgeneric.bitch', comment='Generic_Group')
+    traj.imgeneric.add_leaf('gentest', 'fortytwo', comment='Oh yeah!')
 
 
 def multiply(traj):
     rootlogger = get_root_logger()
     z=traj.x*traj.y
     rootlogger.info('z=x*y: '+str(z)+'='+str(traj.x)+'*'+str(traj.y))
-    traj.f_add_result('z',z)
+    traj.add_result('z',z)
     return z
 
 def multiply_with_storing(traj):
     rootlogger = get_root_logger()
     z=traj.x*traj.y
     rootlogger.info('z=x*y: '+str(z)+'='+str(traj.x)+'*'+str(traj.y))
-    traj.f_add_result('z',z)
-    traj.f_store()
+    traj.add_result('z',z)
+    traj.store()
     return z
 
 
@@ -160,26 +160,26 @@ def multiply_args(traj, arg1=0, arg2=0, arg3=0):
     z=traj.x*traj.y + arg1 + arg2 + arg3
     rootlogger.info('z=x*y: '+str(z)+'='+str(traj.x)+'*'+str(traj.y) +
                     '+'+str(arg1)+'+'+str(arg2)+'+'+str(arg3))
-    traj.f_add_result('z',z)
+    traj.add_result('z',z)
     return z
 
 
 def simple_calculations(traj, arg1, simple_kwarg):
 
-        if traj.v_idx == 0:
+        if traj.idx == 0:
             # to shuffle runs
             time.sleep(0.1)
 
         rootlogger = get_root_logger()
 
         if not 'runs' in traj.res:
-            traj.res.f_add_result_group('runs')
+            traj.res.add_result_group('runs')
 
         rootlogger.info('>>>>>Starting Simple Calculations')
         my_dict = {}
 
         my_dict2={}
-        param_dict=traj.parameters.f_to_dict(fast_access=True,short_names=False)
+        param_dict=traj.parameters.to_dict(fast_access=True,short_names=False)
         for key in sorted(param_dict.keys())[0:5]:
             val = param_dict[key]
             if 'trial' in key:
@@ -205,50 +205,50 @@ def simple_calculations(traj, arg1, simple_kwarg):
         for idx,key in enumerate(keys[0:5]):
             keys[idx] = key.replace('.', '_')
 
-        listy=traj.f_add_result_group('List', comment='Im a result group')
-        traj.f_add_result_group('Iwiiremainempty.yo', comment='Empty group!')
-        traj.Iwiiremainempty.f_store_child('yo')
+        listy=traj.add_result_group('List', comment='Im a result group')
+        traj.add_result_group('Iwiiremainempty.yo', comment='Empty group!')
+        traj.Iwiiremainempty.store_child('yo')
 
-        traj.Iwiiremainempty.f_add_link('kkk',listy )
-        listy.f_add_link('hhh', traj.Iwiiremainempty)
+        traj.Iwiiremainempty.add_link('kkk',listy )
+        listy.add_link('hhh', traj.Iwiiremainempty)
 
-        if not traj.Iwiiremainempty.kkk.v_full_name == traj.List.v_full_name:
+        if not traj.Iwiiremainempty.kkk.full_name == traj.List.full_name:
             raise RuntimeError()
 
-        if not traj.Iwiiremainempty.kkk.v_full_name == traj.List.hhh.kkk.v_full_name:
+        if not traj.Iwiiremainempty.kkk.full_name == traj.List.hhh.kkk.full_name:
             raise RuntimeError()
 
-        traj.f_add_result('runs.' + traj.v_crun + '.ggg', 5555, comment='ladida')
-        traj.res.runs.f_add_result(traj.v_crun + '.ggjg', 5555, comment='didili')
-        traj.res.runs.f_add_result('hhg', 5555, comment='jjjj')
+        traj.add_result('runs.' + traj.v_crun + '.ggg', 5555, comment='ladida')
+        traj.res.runs.add_result(traj.v_crun + '.ggjg', 5555, comment='didili')
+        traj.res.runs.add_result('hhg', 5555, comment='jjjj')
 
-        traj.res.f_add_result(name='lll', comment='duh', data=444)
+        traj.res.add_result(name='lll', comment='duh', data=444)
 
-        x = traj.res.f_add_result(name='nested', comment='duh')
+        x = traj.res.add_result(name='nested', comment='duh')
 
         x['nested0.nested1.nested2.nested3'] =  44
 
-        traj.res.f_add_result(name='test.$set.$', comment='duh', data=444)
+        traj.res.add_result(name='test.$set.$', comment='duh', data=444)
 
         try:
-            traj.f_add_config('teeeeest', 12)
+            traj.add_config('teeeeest', 12)
             raise RuntimeError()
         except TypeError:
             pass
 
-        if not traj.f_contains('results.runs.' + traj.v_crun + '.ggjg', shortcuts=False):
+        if not traj.contains('results.runs.' + traj.v_crun + '.ggjg', shortcuts=False):
             raise RuntimeError()
-        if not traj.f_contains('results.runs.' + traj.v_crun + '.ggg', shortcuts=False):
+        if not traj.contains('results.runs.' + traj.v_crun + '.ggg', shortcuts=False):
             raise RuntimeError()
-        if not traj.f_contains('results.runs.' + traj.v_crun + '.hhg', shortcuts=False):
+        if not traj.contains('results.runs.' + traj.v_crun + '.hhg', shortcuts=False):
             raise RuntimeError()
 
-        traj.f_add_result('List.Of.Keys', dict1=my_dict, dict2=my_dict2, comment='Test')
-        traj.List.f_store_child('Of', recursive=True)
-        traj.f_add_result('DictsNFrame', keys=keys, comment='A dict!')
-        traj.f_add_result('ResMatrix',np.array([1.2,2.3]), comment='ResMatrix')
+        traj.add_result('List.Of.Keys', dict1=my_dict, dict2=my_dict2, comment='Test')
+        traj.List.store_child('Of', recursive=True)
+        traj.add_result('DictsNFrame', keys=keys, comment='A dict!')
+        traj.add_result('ResMatrix',np.array([1.2,2.3]), comment='ResMatrix')
 
-        traj.f_add_result('empty.stuff', (), [], {}, np.array([]), comment='empty stuff')
+        traj.add_result('empty.stuff', (), [], {}, np.array([]), comment='empty stuff')
         #traj.f_add_derived_parameter('All.To.String', str(traj.f_to_dict(fast_access=True,short_names=False)))
 
         myframe = pd.DataFrame(data ={'TC1':[1,2,3],'TC2':['Waaa','',''],'TC3':[1.2,42.2,77]})
@@ -264,44 +264,44 @@ def simple_calculations(traj, arg1, simple_kwarg):
         #   minor_axis=['A', 'B', 'C', 'D'])
 
 
-        traj.f_add_result('myseries', myseries, comment='dd')
-        traj.f_store_item('myseries')
-        traj.f_add_result('mypanel', mypanel, comment='dd')
+        traj.add_result('myseries', myseries, comment='dd')
+        traj.store_item('myseries')
+        traj.add_result('mypanel', mypanel, comment='dd')
         #traj.f_add_result('mypanel4d', p4d, comment='dd')
 
-        traj.f_get('DictsNFrame').f_set(myframe)
+        traj.get('DictsNFrame').set(myframe)
 
-        traj.f_add_result('IStore.SimpleThings',1.0,3,np.float32(5.0), 'Iamstring',(1,2,3),[4,5,6],zwei=2).v_comment='test'
-        traj.f_add_derived_parameter('super.mega',33, comment='It is huuuuge!')
-        traj.super.f_set_annotations(AgainATestAnnotations='I am a string!111elf')
+        traj.add_result('IStore.SimpleThings',1.0,3,np.float32(5.0), 'Iamstring',(1,2,3),[4,5,6],zwei=2).comment='test'
+        traj.add_derived_parameter('super.mega',33, comment='It is huuuuge!')
+        traj.super.set_annotations(AgainATestAnnotations='I am a string!111elf')
 
-        traj.f_add_result(PickleResult,'pickling.result.proto1', my_dict, protocol=1, comment='p1')
-        traj.f_add_result(PickleResult,'pickling.result.proto2', my_dict, protocol=2, comment='p2')
-        traj.f_add_result(PickleResult,'pickling.result.proto0', my_dict, protocol=0, comment='p0')
+        traj.add_result(PickleResult,'pickling.result.proto1', my_dict, protocol=1, comment='p1')
+        traj.add_result(PickleResult,'pickling.result.proto2', my_dict, protocol=2, comment='p2')
+        traj.add_result(PickleResult,'pickling.result.proto0', my_dict, protocol=0, comment='p0')
 
-        traj.f_add_result(SparseResult, 'sparse.csc',traj.csc_mat,42).v_comment='sdsa'
-        traj.f_add_result(SparseResult, 'sparse.bsr',traj.bsr_mat,52).v_comment='sdsa'
-        traj.f_add_result(SparseResult, 'sparse.csr',traj.csr_mat,62).v_comment='sdsa'
-        traj.f_add_result(SparseResult, 'sparse.dia',traj.dia_mat,72).v_comment='sdsa'
+        traj.add_result(SparseResult, 'sparse.csc',traj.csc_mat,42).comment='sdsa'
+        traj.add_result(SparseResult, 'sparse.bsr',traj.bsr_mat,52).comment='sdsa'
+        traj.add_result(SparseResult, 'sparse.csr',traj.csr_mat,62).comment='sdsa'
+        traj.add_result(SparseResult, 'sparse.dia',traj.dia_mat,72).comment='sdsa'
 
-        traj.sparse.v_comment = 'I contain sparse data!'
+        traj.sparse.comment = 'I contain sparse data!'
 
         myobjtab = ObjectTable(data={'strings':['a','abc','qwertt'], 'ints':[1,2,3]})
 
-        traj.f_add_result('object.table', myobjtab, comment='k').v_annotations.f_set(test=42)
-        traj.object.f_set_annotations(test2=42.42)
+        traj.add_result('object.table', myobjtab, comment='k').annotations.set(test=42)
+        traj.object.set_annotations(test2=42.42)
 
-        traj.f_add_result('$.here', 77, comment='huhu')
-        traj.f_add_result('tor.hot.$', dollah=77, comment='duh!')
-        traj.f_add_result('tor.hot.rrr.$.j', 77, comment='duh!')
-        traj.f_add_result('tor.hot.rrr.crun.jjj', 777, comment='duh**2!')
+        traj.add_result('$.here', 77, comment='huhu')
+        traj.add_result('tor.hot.$', dollah=77, comment='duh!')
+        traj.add_result('tor.hot.rrr.$.j', 77, comment='duh!')
+        traj.add_result('tor.hot.rrr.crun.jjj', 777, comment='duh**2!')
 
         #traj.f_add_result('PickleTerror', result_type=PickleResult, test=traj.SimpleThings)
         rootlogger.info('<<<<<<Finished Simple Calculations')
 
         # let's see if the traj can also always be returned
-        if isinstance(traj.v_storage_service, LockWrapper):
-            traj.v_storage_service.pickle_lock = False
+        if isinstance(traj.storage_service, LockWrapper):
+            traj.storage_service.pickle_lock = False
         return 42, traj
 
 
@@ -314,10 +314,10 @@ def to_dict_wo_config(traj):
             if child_name == 'config':
                 continue
 
-            if child.v_is_leaf:
+            if child.is_leaf:
                 res_dict[child_name] = child
             else:
-                res_dict.update(child.f_to_dict(fast_access=False))
+                res_dict.update(child.to_dict(fast_access=False))
 
         return res_dict
 
@@ -346,7 +346,7 @@ class TrajectoryComparator(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'env') and hasattr(self.env, 'f_disable_logging'):
-            self.env.f_disable_logging()
+            self.env.disable_logging()
         self.clear_handlers()
         remove_data()
 
@@ -355,7 +355,7 @@ class TrajectoryComparator(unittest.TestCase):
         trajlength = len(traj1)
 
         if 'results.runs' in traj1:
-            rungroups = traj1.results.runs.f_children()
+            rungroups = traj1.results.runs.children()
         else:
             rungroups = 1
 
@@ -380,18 +380,18 @@ class TrajectoryComparator(unittest.TestCase):
                 raise RuntimeError('You shall not pass')
 
 
-            self.assertTrue(str(item.v_annotations)==str(old_item.v_annotations),'%s != %s' %
-                        (item.v_annotations.f_ann_to_str(),old_item.v_annotations.f_ann_to_str()))
+            self.assertTrue(str(item.annotations)==str(old_item.annotations),'%s != %s' %
+                        (item.annotations.ann_to_str(),old_item.annotations.ann_to_str()))
 
         # Check the annotations
-        for node in traj1.f_iter_nodes(recursive=True):
+        for node in traj1.iter_nodes(recursive=True):
 
-            if node.v_run_branch == traj1.f_wildcard('$', 0) or node.v_run_branch == 'trajectory':
-                if node.v_comment != '' and node.v_full_name in traj2:
-                    second_comment = traj2.f_get(node.v_full_name).v_comment
-                    self.assertEqual(node.v_comment, second_comment, '%s != %s, for %s' %
-                                                (node.v_comment, second_comment, node.v_full_name))
+            if node.run_branch == traj1.wildcard('$', 0) or node.run_branch == 'trajectory':
+                if node.comment != '' and node.full_name in traj2:
+                    second_comment = traj2.get(node.full_name).comment
+                    self.assertEqual(node.comment, second_comment, '%s != %s, for %s' %
+                                                (node.comment, second_comment, node.full_name))
 
-            if not node.v_annotations.f_is_empty():
-                second_anns = traj2.f_get(node.v_full_name).v_annotations
-                self.assertTrue(str(node.v_annotations) == str(second_anns))
+            if not node.annotations.is_empty():
+                second_anns = traj2.get(node.full_name).annotations
+                self.assertTrue(str(node.annotations) == str(second_anns))

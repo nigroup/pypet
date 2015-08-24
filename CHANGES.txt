@@ -56,7 +56,9 @@ pypet 0.1b.13
 
 *   Now the prefixes `f_` and `v_` can be ommited if desired
 
-*   `f_continue` is now named `f_continue_run`
+*   `f_continue` is now named `f_resume` (arguments have been renamed as well)
+
+*   `f_` and `v_` are no longer mandatory prefixes.
 
 
 pypet 0.1b.12

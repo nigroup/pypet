@@ -246,38 +246,38 @@ class TestNewTreeTranslation(unittest.TestCase):
         filename = make_temp_dir('to_new_tree.hdf5')
         mytraj = Trajectory('SCRATCH', filename=filename)
 
-        mytraj.f_add_parameter('Test.Group.Test', 42)
+        mytraj.add_parameter('Test.Group.Test', 42)
 
-        mytraj.f_add_derived_parameter('trajectory.saaaa',33)
+        mytraj.add_derived_parameter('trajectory.saaaa',33)
 
-        mytraj.f_add_derived_parameter('trajectory.intraj.dpar1',33)
+        mytraj.add_derived_parameter('trajectory.intraj.dpar1',33)
 
-        mytraj.f_add_derived_parameter('run_00000008.inrun.dpar2',33)
-        mytraj.f_add_derived_parameter('run_00000001.inrun.dpar3',35)
+        mytraj.add_derived_parameter('run_00000008.inrun.dpar2',33)
+        mytraj.add_derived_parameter('run_00000001.inrun.dpar3',35)
 
 
-        mytraj.f_add_result('trajectory.intraj.res1',33)
+        mytraj.add_result('trajectory.intraj.res1',33)
 
-        mytraj.f_add_result('run_00000008.inrun.res1',33)
+        mytraj.add_result('run_00000008.inrun.res1',33)
 
-        mytraj.f_store()
+        mytraj.store()
 
-        mytraj.f_migrate(new_name=mytraj.v_name + 'PETER', in_store=True)
+        mytraj.migrate(new_name=mytraj.name + 'PETER', in_store=True)
 
-        mytraj.f_store()
+        mytraj.store()
 
         fu=FileUpdater(filename=filename, backup=True)
 
         fu.update_file()
 
-        mytraj = Trajectory(name=mytraj.v_name, add_time=False, filename=filename)
-        mytraj.f_load(load_parameters=2, load_derived_parameters=2, load_results=2)
+        mytraj = Trajectory(name=mytraj.name, add_time=False, filename=filename)
+        mytraj.load(load_parameters=2, load_derived_parameters=2, load_results=2)
 
-        for node in mytraj.f_iter_nodes():
-            self.assertTrue(node.v_name != 'trajectory')
+        for node in mytraj.iter_nodes():
+            self.assertTrue(node.name != 'trajectory')
 
-            if 'run_' in node.v_full_name:
-                self.assertTrue('.runs.' in node.v_full_name)
+            if 'run_' in node.full_name:
+                self.assertTrue('.runs.' in node.full_name)
 
         remove_data()
 

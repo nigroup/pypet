@@ -26,19 +26,19 @@ class ConfigParseTest(TrajectoryComparator):
         filename = make_temp_dir('config_test.hdf5')
         env = Environment(filename=filename, config=self.parser)
 
-        traj = env.v_traj
-        self.assertTrue(traj.v_auto_load)
-        self.assertTrue(traj.v_lazy_adding)
-        self.assertEqual(traj.v_storage_service.filename, filename)
+        traj = env.traj
+        self.assertTrue(traj.auto_load)
+        self.assertTrue(traj.lazy_adding)
+        self.assertEqual(traj.storage_service.filename, filename)
 
         self.assertEqual(traj.x, 42)
-        self.assertEqual(traj.f_get('y').v_comment, 'This is the second variable')
+        self.assertEqual(traj.get('y').comment, 'This is the second variable')
         self.assertTrue(traj.testconfig)
 
         self.assertTrue(env._logging_manager.log_config is not None)
         self.assertTrue(env._logging_manager._sp_config is not None)
 
-        env.f_disable_logging()
+        env.disable_logging()
 
 
 if __name__ == '__main__':

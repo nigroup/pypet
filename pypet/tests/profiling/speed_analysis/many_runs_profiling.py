@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import cProfile as profile
 
 def job(traj):
-    traj.f_ares('result', 42, comment='A result')
+    traj.ares('result', 42, comment='A result')
 
 def test_progress():
     print('\n\n')
@@ -29,17 +29,17 @@ def main():
                       log_levels=0, report_progress=(2, 'progress', 50),
                       overwrite_file=True) as env:
 
-        traj = env.v_traj
+        traj = env.traj
 
         traj.par.x = BrianParameter('', 0*ms, 'parameter')
 
-        traj.f_explore({'x': [x*ms for x in range(1000)]})
+        traj.explore({'x': [x*ms for x in range(1000)]})
 
-        traj.f_store()
+        traj.store()
 
         # env.f_run(job)
 
-        dicts = [traj.f_get_run_information(x) for x in range(len(traj))]
+        dicts = [traj.get_run_information(x) for x in range(len(traj))]
         runtimes = [dic['finish_timestamp'] - dic['timestamp'] for dic in dicts]
 
     # plt.plot(runtimes)

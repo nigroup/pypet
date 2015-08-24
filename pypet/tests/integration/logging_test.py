@@ -29,7 +29,7 @@ class LogWhenStored(Result):
         return super(LogWhenStored, self)._store()
 
 def add_result(traj, level=logging.ERROR):
-    traj.f_ares(LogWhenStored, 'logging.test',
+    traj.ares(LogWhenStored, 'logging.test',
                 42, level=level, comment='STORE_Test!')
 
 def log_error(traj):
@@ -102,18 +102,18 @@ class LoggingTest(TrajectoryComparator):
         self.traj_name = make_trajectory_name(self)
         self.env = Environment(trajectory=self.traj_name,
                                filename=self.filename, **self.mode.__dict__)
-        self.traj = self.env.v_traj
+        self.traj = self.env.traj
 
 
     def add_params(self, traj):
 
-        traj.v_lazy_adding = True
+        traj.lazy_adding = True
         traj.par.p1 = 42, 'Hey'
-        traj.f_apar('g1.p2', 145, comment='Test')
+        traj.apar('g1.p2', 145, comment='Test')
 
 
     def explore(self, traj):
-        traj.f_explore({'p1': range(7)})
+        traj.explore({'p1': range(7)})
 
     @unittest.skipIf(platform.system() == 'Windows', 'Log file creation might fail under windows.')
     def test_logfile_creation_normal(self):
@@ -123,10 +123,10 @@ class LoggingTest(TrajectoryComparator):
         self.add_params(self.traj)
         self.explore(self.traj)
 
-        self.env.f_run(log_wo_error_levels)
-        self.env.f_disable_logging()
+        self.env.run(log_wo_error_levels)
+        self.env.disable_logging()
 
-        traj = self.env.v_traj
+        traj = self.env.traj
 
         log_path = get_log_path(traj)
 
@@ -205,7 +205,7 @@ class LoggingTest(TrajectoryComparator):
         # if not self.multiproc:
         #     return
         self.make_env(log_config=None)
-        traj = self.env.v_traj
+        traj = self.env.traj
 
         log_path = get_log_path(traj)
 
@@ -217,14 +217,14 @@ class LoggingTest(TrajectoryComparator):
         self.add_params(self.traj)
         self.explore(self.traj)
 
-        self.env.f_run(log_all_levels)
+        self.env.run(log_all_levels)
 
         self.assertFalse(os.path.isdir(log_path))
         self.assertTrue(self.env._logging_manager._sp_config is None)
         self.assertTrue(self.env._logging_manager._mp_config is None)
         self.assertTrue(self.env._logging_manager.log_config is None)
 
-        self.env.f_disable_logging()
+        self.env.disable_logging()
         # pypet_path = os.path.abspath(os.path.dirname(pypet.pypetlogging))
         # init_path = os.path.join(pypet_path, 'logging')
         # log_config = os.path.join(init_path, 'default.ini')
@@ -238,12 +238,12 @@ class LoggingTest(TrajectoryComparator):
         self.add_params(self.traj)
         self.explore(self.traj)
 
-        self.env.f_run(log_all_levels)
+        self.env.run(log_all_levels)
         if self.mode.multiproc:
             logging.getLogger('pypet.test').error('ttt')
-        self.env.f_disable_logging()
+        self.env.disable_logging()
 
-        traj = self.env.v_traj
+        traj = self.env.traj
         log_path = get_log_path(traj)
 
         if self.mode.multiproc:
@@ -333,14 +333,14 @@ class LoggingTest(TrajectoryComparator):
     def test_file_renaming(self):
         traj_name = 'test'
         traj = Trajectory('test', add_time=False)
-        traj.f_add_parameter('x', 42)
-        traj.f_explore({'x': [1,2,3]})
+        traj.add_parameter('x', 42)
+        traj.explore({'x': [1,2,3]})
         rename_string = '$traj_$set_$run'
         solution_1 = 'test_run_set_ALL_run_ALL'
         solution_2 = 'test_run_set_00000_run_00000000'
         renaming_1 = rename_log_file(rename_string, traj)
         self.assertEqual(renaming_1, solution_1)
-        traj.v_idx = 0
+        traj.idx = 0
         renaming_2 = rename_log_file(rename_string, traj)
         self.assertEqual(renaming_2, solution_2)
 
@@ -356,12 +356,12 @@ class LoggingTest(TrajectoryComparator):
         self.add_params(self.traj)
         self.explore(self.traj)
 
-        self.env.f_run(log_all_levels)
+        self.env.run(log_all_levels)
         if self.mode.multiproc:
             logging.getLogger('pypet.test').error('ttt')
-        self.env.f_disable_logging()
+        self.env.disable_logging()
 
-        traj = self.env.v_traj
+        traj = self.env.traj
         log_path = get_log_path(traj)
 
         if self.mode.multiproc:
@@ -459,12 +459,12 @@ class LoggingTest(TrajectoryComparator):
         self.add_params(self.traj)
         self.explore(self.traj)
 
-        self.env.f_run(log_all_levels)
+        self.env.run(log_all_levels)
         if self.mode.multiproc:
             logging.getLogger('pypet.test').error('ttt')
-        self.env.f_disable_logging()
+        self.env.disable_logging()
 
-        traj = self.env.v_traj
+        traj = self.env.traj
         log_path = get_log_path(traj)
 
         # if self.mode.multiproc:
@@ -552,13 +552,13 @@ class LoggingTest(TrajectoryComparator):
                           log_stdout=('STDOUT', 50), #log_folder=folder
                           )
 
-        env.f_run(log_error)
-        traj = env.v_traj
+        env.run(log_error)
+        traj = env.traj
         path = get_log_path(traj)
 
         mainstr = 'sTdOuTLoGGinG'
         print(mainstr)
-        env.f_disable_logging()
+        env.disable_logging()
 
         mainfilename = os.path.join(path, 'LOG.txt')
         with open(mainfilename, mode='r') as mainf:
@@ -577,10 +577,10 @@ class LoggingTest(TrajectoryComparator):
         self.add_params(self.traj)
         self.explore(self.traj)
 
-        self.env.f_run(log_all_levels)
-        self.env.f_disable_logging()
+        self.env.run(log_all_levels)
+        self.env.disable_logging()
 
-        traj = self.env.v_traj
+        traj = self.env.traj
 
         path = get_log_path(traj)
         mainfilename = os.path.join(path, 'LOG.txt')
@@ -599,10 +599,10 @@ class LoggingTest(TrajectoryComparator):
         self.add_params(self.traj)
         self.explore(self.traj)
 
-        self.env.f_run(log_all_levels)
-        self.env.f_disable_logging()
+        self.env.run(log_all_levels)
+        self.env.disable_logging()
 
-        path = get_log_path(self.env.v_traj)
+        path = get_log_path(self.env.traj)
         mainfilename = os.path.join(path, 'LOG.txt')
         with open(mainfilename, mode='r') as mainf:
             full_text = mainf.read()

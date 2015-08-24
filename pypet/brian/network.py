@@ -447,9 +447,9 @@ class NetworkRunner(NetworkComponent):
 
         """
         if pre_run:
-            durations_list = traj.f_get_all(self._pre_durations_group_name)
+            durations_list = traj.get_all(self._pre_durations_group_name)
         else:
-            durations_list = traj.f_get_all(self._durations_group_name)
+            durations_list = traj.get_all(self._durations_group_name)
 
 
         subruns = {}
@@ -457,14 +457,14 @@ class NetworkRunner(NetworkComponent):
 
 
         for durations in durations_list:
-            for duration_param in durations.f_iter_leaves(with_links=False):
+            for duration_param in durations.iter_leaves(with_links=False):
 
-                if 'order' in duration_param.v_annotations:
-                    order = duration_param.v_annotations.order
+                if 'order' in duration_param.annotations:
+                    order = duration_param.annotations.order
                 else:
                     raise RuntimeError('Your duration parameter %s has no order. Please add '
                                        'an order in `v_annotations.order`.' %
-                                       duration_param.v_full_name)
+                                       duration_param.full_name)
 
                 if order in subruns:
                     raise RuntimeError('Your durations must differ in their order, there are two '
@@ -513,8 +513,8 @@ class NetworkRunner(NetworkComponent):
 
             # 4. Run the network
             self._logger.info('STARTING subrun `%s` (#%d) lasting %s.' %
-                             (current_subrun.v_name, subrun_number, str(current_subrun.f_get())))
-            network.run(duration=current_subrun.f_get(), report=self._report,
+                             (current_subrun.name, subrun_number, str(current_subrun.get())))
+            network.run(duration=current_subrun.get(), report=self._report,
                               report_period=self._report_period)
 
             # 5. Call `analyse` of all analyser components
@@ -776,8 +776,8 @@ class NetworkManager(HasLogger):
         # Check if the network was pre-built
         if self._pre_built:
             # If yes check for multiprocessing or if a single core processing is forced
-            multiproc = traj.f_get('config.environment.%s.multiproc' %
-                                   traj.v_environment_name).f_get()
+            multiproc = traj.get('config.environment.%s.multiproc' %
+                                   traj.environment_name).get()
             if multiproc:
                 self._run_network(traj)
             else:
@@ -812,11 +812,11 @@ class NetworkManager(HasLogger):
                           '-------------------\n' +\
                           '      with\n'
 
-        explore_dict = traj.f_get_explored_parameters(copy=False)
+        explore_dict = traj.get_explored_parameters(copy=False)
         for full_name in explore_dict:
             parameter = explore_dict[full_name]
 
-            print_statement += '%s = %s\n' % (parameter.v_full_name, parameter.f_val_to_str())
+            print_statement += '%s = %s\n' % (parameter.full_name, parameter.val_to_str())
 
         print_statement += '-------------------'
 

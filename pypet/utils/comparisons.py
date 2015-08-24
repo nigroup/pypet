@@ -30,13 +30,13 @@ def results_equal(a, b):
     :raises: ValueError if both inputs are no result instances
 
     """
-    if a.v_is_parameter and b.v_is_parameter:
+    if a.is_parameter and b.is_parameter:
         raise ValueError('Both inputs are not results.')
 
-    if a.v_is_parameter or b.v_is_parameter:
+    if a.is_parameter or b.is_parameter:
         return False
 
-    if a.v_full_name != b.v_full_name:
+    if a.full_name != b.full_name:
         return False
 
     if hasattr(a, '_data') and not hasattr(b, '_data'):
@@ -69,37 +69,37 @@ def parameters_equal(a, b):
     :raises: ValueError if both inputs are no parameter instances
 
     """
-    if (not b.v_is_parameter and
-            not a.v_is_parameter):
+    if (not b.is_parameter and
+            not a.is_parameter):
         raise ValueError('Both inputs are not parameters')
 
-    if (not b.v_is_parameter or
-            not a.v_is_parameter):
+    if (not b.is_parameter or
+            not a.is_parameter):
         return False
 
-    if a.v_full_name != b.v_full_name:
+    if a.full_name != b.full_name:
         return False
 
-    if a.f_is_empty() and b.f_is_empty():
+    if a.is_empty() and b.is_empty():
         return True
 
-    if a.f_is_empty() != b.f_is_empty():
+    if a.is_empty() != b.is_empty():
         return False
 
-    if not a._values_of_same_type(a.f_get(), b.f_get()):
+    if not a._values_of_same_type(a.get(), b.get()):
         return False
 
-    if not a._equal_values(a.f_get(), b.f_get()):
+    if not a._equal_values(a.get(), b.get()):
         return False
 
-    if a.f_has_range() != b.f_has_range():
+    if a.has_range() != b.has_range():
         return False
 
-    if a.f_has_range():
-        if a.f_get_range_length() != b.f_get_range_length():
+    if a.has_range():
+        if a.get_range_length() != b.get_range_length():
             return False
 
-        for myitem, bitem in zip(a.f_get_range(copy=False), b.f_get_range(copy=False)):
+        for myitem, bitem in zip(a.get_range(copy=False), b.get_range(copy=False)):
             if not a._values_of_same_type(myitem, bitem):
                 return False
             if not a._equal_values(myitem, bitem):

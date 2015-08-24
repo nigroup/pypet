@@ -33,10 +33,10 @@ def manual_run(turn_into_run=True, store_meta_data=True, clean_up=True):
         def new_func(traj, *args, **kwargs):
             do_wrap = not traj._run_by_environment
             if do_wrap:
-                traj.f_start_run(turn_into_run=turn_into_run)
+                traj.start_run(turn_into_run=turn_into_run)
             result = func(traj, *args, **kwargs)
             if do_wrap:
-                traj.f_finalize_run(store_meta_data=store_meta_data,
+                traj.finalize_run(store_meta_data=store_meta_data,
                                     clean_up=clean_up)
             return result
 
@@ -209,7 +209,7 @@ def with_open_store(func):
     @functools.wraps(func)
     def new_func(self, *args, **kwargs):
 
-        if not self.traj.v_storage_service.is_open:
+        if not self.traj.storage_service.is_open:
             raise TypeError('Function `%s` is only available if the storage is open.' %
                             func.__name__)
 

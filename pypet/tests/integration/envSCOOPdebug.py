@@ -64,9 +64,9 @@ class MultiprocSCOOPNetlockTest(EnvironmentTest):
                           use_scoop=self.use_scoop,
                           port=self.url)
 
-        traj = env.v_trajectory
+        traj = env.trajectory
 
-        traj.v_standard_parameter=Parameter
+        traj.standard_parameter=Parameter
 
         ## Create some parameters
         self.param_dict={}

@@ -33,7 +33,7 @@ class Multiply(object):
 
     def __call__(self, traj, i):
         z = traj.x * traj.y + i
-        traj.f_add_result('z', z)
+        traj.add_result('z', z)
         return z
 
 
@@ -44,7 +44,7 @@ class ContinueTest(TrajectoryComparator):
     def tearDown(self):
         if hasattr(self, 'envs'):
             for env in self.envs:
-                env.f_disable_logging()
+                env.disable_logging()
 
         super(ContinueTest, self).tearDown()
 
@@ -53,7 +53,7 @@ class ContinueTest(TrajectoryComparator):
         ### Make a test run
         simple_arg = -13
         simple_kwarg= 13.0
-        env.f_run(simple_calculations, simple_arg, simple_kwarg=simple_kwarg)
+        env.run(simple_calculations, simple_arg, simple_kwarg=simple_kwarg)
 
     def make_environment(self, idx, filename, continuable=True, delete_continue=False):
 
@@ -69,14 +69,14 @@ class ContinueTest(TrajectoryComparator):
                           file_title=trajname,
                           log_stdout=False,
                           log_config=get_log_config(),
-                          continuable=continuable,
-                          continue_folder=self.cnt_folder,
-                          delete_continue=delete_continue,
+                          resumable=continuable,
+                          resume_folder=self.cnt_folder,
+                          delete_resume=delete_continue,
                           large_overview_tables=True)
 
 
         self.envs.append(env)
-        self.trajs.append( env.v_trajectory)
+        self.trajs.append( env.trajectory)
 
 
     def explore(self, traj):
@@ -84,7 +84,7 @@ class ContinueTest(TrajectoryComparator):
             'Numpy.double': [np.array([1.0,2.0,3.0,4.0]), np.array([-1.0,3.0,5.0,7.0])]})
 
 
-        traj.f_explore(self.explored)
+        traj.explore(self.explored)
 
     # def _remove_nresults_from_traj(self, nresults):
     #
@@ -148,9 +148,9 @@ class ContinueTest(TrajectoryComparator):
 
         name_set = set([x[1]['name']  for x in result_tuple_list])
         removed = 0
-        for run_name in traj.f_iter_runs():
+        for run_name in traj.iter_runs():
             if run_name not in name_set:
-                run_dict = traj.f_get_run_information(run_name, copy=False)
+                run_dict = traj.get_run_information(run_name, copy=False)
                 run_dict['completed'] = 0
                 idx = run_dict['idx']
                 traj._updated_run_information.add(idx)
@@ -158,7 +158,7 @@ class ContinueTest(TrajectoryComparator):
 
         self.assertGreaterEqual(removed, nresults)
         logging.getLogger().error('Removed %s runs for continuing' % removed)
-        traj.f_store(only_init=True)
+        traj.store(only_init=True)
 
     def test_continueing(self):
         self.filenames = [make_temp_dir('test_continuing.hdf5'), 0]
@@ -184,19 +184,19 @@ class ContinueTest(TrajectoryComparator):
         for irun in range(len(self.filenames)):
             self.make_run(self.envs[irun])
 
-        traj_name = self.trajs[1].v_name
-        continue_folder = os.path.join(self.cnt_folder, self.trajs[1].v_name)
+        traj_name = self.trajs[1].name
+        continue_folder = os.path.join(self.cnt_folder, self.trajs[1].name)
 
 
-        self.trajs[1]=self.envs[1].v_trajectory
+        self.trajs[1]=self.envs[1].trajectory
         self._remove_nresults(self.trajs[1], 3, continue_folder)
 
-        self.envs[1].v_current_idx = 0
-        results = self.envs[1].f_continue(trajectory_name = traj_name)
+        self.envs[1].current_idx = 0
+        results = self.envs[1].continue(trajectory_name = traj_name)
 
 
         for irun in range(len(self.filenames)):
-            self.trajs[irun].f_load(load_parameters=pypetconstants.OVERWRITE_DATA,
+            self.trajs[irun].load(load_parameters=pypetconstants.OVERWRITE_DATA,
                                     load_derived_parameters=pypetconstants.OVERWRITE_DATA,
                                     load_results=pypetconstants.OVERWRITE_DATA,
                                     load_other_data=pypetconstants.OVERWRITE_DATA)
@@ -231,8 +231,8 @@ class ContinueTest(TrajectoryComparator):
         for irun in range(len(self.filenames)):
             self.make_run(self.envs[irun])
 
-        traj_name = self.trajs[0].v_name
-        continue_folder = os.path.join(self.cnt_folder, self.trajs[0].v_name)
+        traj_name = self.trajs[0].name
+        continue_folder = os.path.join(self.cnt_folder, self.trajs[0].name)
         self.assertFalse(os.path.isdir(continue_folder))
 
 
@@ -265,25 +265,25 @@ class ContinueTest(TrajectoryComparator):
         for irun in range(len(self.filenames)):
             self.make_run(self.envs[irun])
 
-        self.trajs[0].f_add_parameter('Delete.Me', 'I will be deleted!')
-        self.trajs[0].f_store_item('Delete.Me')
+        self.trajs[0].add_parameter('Delete.Me', 'I will be deleted!')
+        self.trajs[0].store_item('Delete.Me')
 
-        self.trajs[0].f_remove_item(self.trajs[0].f_get('Delete.Me'))
+        self.trajs[0].remove_item(self.trajs[0].get('Delete.Me'))
 
         self.assertTrue('Delete.Me' not in self.trajs[0],'Delete.Me is still in traj')
 
-        self.trajs[0].f_load_skeleton()
-        self.trajs[0].f_load_item('Delete.Me')
-        self.trajs[0].f_delete_item(self.trajs[0].f_get('Delete.Me'),
+        self.trajs[0].load_skeleton()
+        self.trajs[0].load_item('Delete.Me')
+        self.trajs[0].delete_item(self.trajs[0].get('Delete.Me'),
                                         remove_from_trajectory=True)
 
-        self.trajs[0].f_load_skeleton()
+        self.trajs[0].load_skeleton()
         self.assertTrue(not 'Delete.Me' in self.trajs[0],'Delete.Me is still in traj')
 
 
         for irun in range(len(self.filenames)):
-            self.trajs[irun].f_load_child('results',recursive=True,load_data=pypetconstants.OVERWRITE_DATA)
-            self.trajs[irun].f_load_child('derived_parameters',recursive=True,load_data=pypetconstants.OVERWRITE_DATA)
+            self.trajs[irun].load_child('results',recursive=True,load_data=pypetconstants.OVERWRITE_DATA)
+            self.trajs[irun].load_child('derived_parameters',recursive=True,load_data=pypetconstants.OVERWRITE_DATA)
 
         self.compare_trajectories(self.trajs[0],self.trajs[1])
 
@@ -317,17 +317,17 @@ class ContinueTest(TrajectoryComparator):
 
         #self.trajs[0].f_store()
 
-        temp_sservice = self.trajs[0].v_storage_service
-        temp_name = self.trajs[0].v_name
+        temp_sservice = self.trajs[0].storage_service
+        temp_name = self.trajs[0].name
 
         self.trajs[0] = Trajectory()
-        self.trajs[0].v_storage_service=temp_sservice
-        self.trajs[0].f_load(name=temp_name, as_new=False, load_parameters=2,
+        self.trajs[0].storage_service=temp_sservice
+        self.trajs[0].load(name=temp_name, as_new=False, load_parameters=2,
                              load_derived_parameters=2, load_results=2, load_other_data=2)
         #self.trajs[0].f_load(trajectory_name=temp_name,as_new=False, load_params=2, load_derived_params=2, load_results=2)
 
-        self.trajs[1].f_load_skeleton()
-        self.trajs[1].f_load_items(self.trajs[1].f_to_dict().values(),only_empties=True)
+        self.trajs[1].load_skeleton()
+        self.trajs[1].load_items(self.trajs[1].to_dict().values(),only_empties=True)
         self.compare_trajectories(self.trajs[0],self.trajs[1])
 
 
@@ -339,7 +339,7 @@ class ContinueMPTest(ContinueTest):
     tags = 'integration', 'hdf5', 'environment', 'continue', 'multiproc', 'nopool', 'dill'
 
     def make_run_mp(self,env):
-        env.f_run(multiply)
+        env.run(multiply)
 
 
     def make_environment(self, idx, filename, continuable=True, delete_continue=False,
@@ -362,21 +362,21 @@ class ContinueMPTest(ContinueTest):
                           log_stdout=False,
                           use_pool=False,
                           log_config=get_log_config(),
-                          continuable=continuable,
-                          continue_folder=self.cnt_folder,
-                          delete_continue=delete_continue,
+                          resumable=continuable,
+                          resume_folder=self.cnt_folder,
+                          delete_resume=delete_continue,
                           multiproc=True,
                           purge_duplicate_comments=False,
                           ncores=2)
 
 
         self.envs.append(env)
-        self.trajs.append( env.v_trajectory)
+        self.trajs.append( env.trajectory)
 
     def explore_mp(self, traj):
         self.explored={'x':[0.0, 1.0, 2.0, 3.0, 4.0], 'y':[0.1, 2.2, 3.3, 4.4, 5.5]}
 
-        traj.f_explore(cartesian_product(self.explored))
+        traj.explore(cartesian_product(self.explored))
 
     def test_continueing_mp_custom(self):
         self.filenames = [make_temp_dir('test_continueing_mp_custom.hdf5'),
@@ -394,8 +394,8 @@ class ContinueMPTest(ContinueTest):
         self.param_dict={'x':1.0, 'y':2.0}
 
         for irun in range(len(self.filenames)):
-            self.trajs[irun].f_add_parameter(CustomParameter,'x', 1.0)
-            self.trajs[irun].f_add_parameter(CustomParameter, 'y', 1.0)
+            self.trajs[irun].add_parameter(CustomParameter,'x', 1.0)
+            self.trajs[irun].add_parameter(CustomParameter, 'y', 1.0)
 
 
         self.explore_mp(self.trajs[0])
@@ -404,32 +404,32 @@ class ContinueMPTest(ContinueTest):
         arg=33
         for irun in range(len(self.filenames)):
 
-            self.envs[irun].f_run(Multiply(), arg)
+            self.envs[irun].run(Multiply(), arg)
 
-        traj_name = self.trajs[1].v_name
-        continue_folder = os.path.join(self.cnt_folder, self.trajs[1].v_name)
+        traj_name = self.trajs[1].name
+        continue_folder = os.path.join(self.cnt_folder, self.trajs[1].name)
 
         self.envs.pop()
         self.assertEqual(len(self.envs), 1)
         self.make_environment(1, self.filenames[1], continuable=True, add_time=False,
                               trajectory=traj_name)
-        self.trajs[1] = self.envs[1].v_traj
-        self.trajs[1].f_load(load_data=pypetconstants.LOAD_NOTHING)
+        self.trajs[1] = self.envs[1].traj
+        self.trajs[1].load(load_data=pypetconstants.LOAD_NOTHING)
         self._remove_nresults(self.trajs[1], 3, continue_folder)
 
-        results = self.envs[1].f_continue(trajectory_name = traj_name)
+        results = self.envs[1].continue(trajectory_name = traj_name)
         results = sorted(results, key = lambda x: x[0])
 
         for irun in range(len(self.filenames)):
-            self.trajs[irun].f_load(load_parameters=pypetconstants.OVERWRITE_DATA,
+            self.trajs[irun].load(load_parameters=pypetconstants.OVERWRITE_DATA,
                                     load_derived_parameters=pypetconstants.OVERWRITE_DATA,
                                     load_results=pypetconstants.OVERWRITE_DATA,
                                     load_other_data=pypetconstants.OVERWRITE_DATA)
 
         self.compare_trajectories(self.trajs[1],self.trajs[0])
 
-        for run_name in self.trajs[0].f_iter_runs():
-            z = (self.trajs[0].v_idx, self.trajs[0].crun.z)
+        for run_name in self.trajs[0].iter_runs():
+            z = (self.trajs[0].idx, self.trajs[0].crun.z)
             self.assertTrue(z in results, '%s not in %s' % (z, results))
 
         self.assertTrue(len(self.trajs[-1])== len(results))
@@ -450,28 +450,28 @@ class ContinueMPTest(ContinueTest):
         self.param_dict={'x':1.0, 'y':2.0}
 
         for irun in range(len(self.filenames)):
-            self.trajs[irun].f_add_parameter(CustomParameter,'x', 1.0)
-            self.trajs[irun].f_add_parameter(CustomParameter, 'y', 1.0)
+            self.trajs[irun].add_parameter(CustomParameter,'x', 1.0)
+            self.trajs[irun].add_parameter(CustomParameter, 'y', 1.0)
 
         self.explore_mp(self.trajs[0])
         self.explore_mp(self.trajs[1])
 
         for irun in range(len(self.filenames)):
-            self.envs[irun].f_run(multiply)
+            self.envs[irun].run(multiply)
 
-        traj_name = self.trajs[1].v_name
-        continue_folder = os.path.join(self.cnt_folder, self.trajs[1].v_name)
+        traj_name = self.trajs[1].name
+        continue_folder = os.path.join(self.cnt_folder, self.trajs[1].name)
 
 
-        self.trajs[1]=self.envs[1].v_trajectory
+        self.trajs[1]=self.envs[1].trajectory
         self._remove_nresults(self.trajs[1], 3, continue_folder)
 
-        self.envs[1].v_current_idx = 0
-        results = self.envs[1].f_continue(trajectory_name = traj_name)
+        self.envs[1].current_idx = 0
+        results = self.envs[1].continue(trajectory_name = traj_name)
         results = sorted(results, key = lambda x: x[0])
 
         for irun in range(len(self.filenames)):
-            self.trajs[irun].f_load(load_parameters=pypetconstants.OVERWRITE_DATA,
+            self.trajs[irun].load(load_parameters=pypetconstants.OVERWRITE_DATA,
                                     load_derived_parameters=pypetconstants.OVERWRITE_DATA,
                                     load_results=pypetconstants.OVERWRITE_DATA,
                                     load_other_data=pypetconstants.OVERWRITE_DATA)
@@ -480,8 +480,8 @@ class ContinueMPTest(ContinueTest):
 
         self.assertEqual(len(self.trajs[1]), len(results))
 
-        for run_name in self.trajs[0].f_iter_runs():
-            z = (self.trajs[0].v_idx, self.trajs[0].crun.z)
+        for run_name in self.trajs[0].iter_runs():
+            z = (self.trajs[0].idx, self.trajs[0].crun.z)
             self.assertTrue( z in results, '%s not in %s' % (z, results))
 
 
@@ -506,15 +506,15 @@ class ContinueMPPoolTest(ContinueMPTest):
                           log_stdout=False,
                           purge_duplicate_comments=False,
                           log_config=get_log_config(),
-                          continuable=True,
-                          continue_folder=self.cnt_folder,
-                          delete_continue=False,
+                          resumable=True,
+                          resume_folder=self.cnt_folder,
+                          delete_resume=False,
                           multiproc=True,
                           use_pool=True,
                           ncores=4)
 
         self.envs.append(env)
-        self.trajs.append( env.v_trajectory)
+        self.trajs.append( env.trajectory)
 
 
 if __name__ == '__main__':

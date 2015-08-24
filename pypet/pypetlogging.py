@@ -253,19 +253,19 @@ def rename_log_file(filename, trajectory=None,
     """
     if pypetconstants.LOG_ENV in filename:
         if env_name is None:
-            env_name = trajectory.v_environment_name
+            env_name = trajectory.environment_name
         filename = filename.replace(pypetconstants.LOG_ENV, env_name)
     if pypetconstants.LOG_TRAJ in filename:
         if traj_name is None:
-            traj_name = trajectory.v_name
+            traj_name = trajectory.name
         filename = filename.replace(pypetconstants.LOG_TRAJ, traj_name)
     if pypetconstants.LOG_RUN in filename:
         if run_name is None:
-            run_name = trajectory.f_wildcard('$')
+            run_name = trajectory.wildcard('$')
         filename = filename.replace(pypetconstants.LOG_RUN, run_name)
     if pypetconstants.LOG_SET in filename:
         if set_name is None:
-            set_name = trajectory.f_wildcard('$set')
+            set_name = trajectory.wildcard('$set')
         filename = filename.replace(pypetconstants.LOG_SET, set_name)
     if pypetconstants.LOG_PROC in filename:
         if process_name is None:
@@ -365,10 +365,10 @@ class LoggingManager(object):
 
     def extract_replacements(self, trajectory):
         """Extracts the wildcards and file replacements from the `trajectory`"""
-        self.env_name = trajectory.v_environment_name
-        self.traj_name = trajectory.v_name
-        self.set_name =  trajectory.f_wildcard('$set')
-        self.run_name = trajectory.f_wildcard('$')
+        self.env_name = trajectory.environment_name
+        self.traj_name = trajectory.name
+        self.set_name =  trajectory.wildcard('$set')
+        self.run_name = trajectory.wildcard('$')
 
     def __getstate__(self):
         """ConfigParsers are not guaranteed to be picklable so we need to remove these."""

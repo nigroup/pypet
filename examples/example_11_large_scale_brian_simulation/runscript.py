@@ -22,7 +22,7 @@ def main():
     env = Environment(trajectory='Clustered_Network',
                       add_time=False,
                       filename=filename,
-                      continuable=False,
+                      resumable=False,
                       lazy_debug=False,
                       multiproc=True,
                       ncores=2,

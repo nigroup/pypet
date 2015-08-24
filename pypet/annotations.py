@@ -23,11 +23,11 @@ This module contains two classes:
 __author__ = 'Robert Meyer'
 
 from pypet.utils.decorators import deprecated
-from pypet.pypetlogging import HasLogger
 import pypet.compat as compat
-from pypet.slots import HasSlots
+from pypet.namingscheme import PypetNaming
 
-class Annotations(HasSlots):
+
+class Annotations(PypetNaming):
     """ Simple container class for annotations.
 
     Every tree node (*leaves* and *group* nodes) can be annotated.
@@ -58,7 +58,7 @@ class Annotations(HasSlots):
 
     def __getitem__(self, item):
         """Equivalent to calling f_get()"""
-        return self.f_get(item)
+        return self.get(item)
 
     def __setitem__(self, key, value):
         """Almost equivalent to calling __setattr__.
@@ -66,12 +66,12 @@ class Annotations(HasSlots):
         Treats integer values as `f_get`.
 
         """
-        self.f_set(**{key: value})
+        self.set(**{key: value})
 
     def __delitem__(self, key):
-        self.f_remove(key)
+        self.remove(key)
 
-    def f_to_dict(self, copy=True):
+    def to_dict(self, copy=True):
         """Returns annotations as dictionary.
 
         :param copy: Whether to return a shallow copy or the real thing (aka _dict).
@@ -82,11 +82,11 @@ class Annotations(HasSlots):
         else:
             return self._dict
 
-    def f_is_empty(self):
+    def is_empty(self):
         """Checks if annotations are empty"""
         return len(self._dict) == 0
 
-    def f_empty(self):
+    def empty(self):
         """Removes all annotations from RAM """
         self._dict_ = None
 
@@ -95,13 +95,13 @@ class Annotations(HasSlots):
             # We set a private attribute
             super(Annotations, self).__setattr__(key, value)
         else:
-            self.f_set_single(key, value)
+            self.set_single(key, value)
 
     def __getattr__(self, item):
-        return self.f_get(item)
+        return self.get(item)
 
     def __delattr__(self, item):
-        self.f_remove(item)
+        self.remove(item)
 
     def _translate_key(self, key):
         if isinstance(key, int):
@@ -111,7 +111,7 @@ class Annotations(HasSlots):
                 key = 'annotation_%d' % key
         return key
 
-    def f_get(self, *args):
+    def get(self, *args):
         """Returns annotations
 
         If len(args)>1, then returns a list of annotations.
@@ -147,7 +147,7 @@ class Annotations(HasSlots):
         else:
             return tuple(result_list)
 
-    def f_set(self, *args, **kwargs):
+    def set(self, *args, **kwargs):
         """Sets annotations
 
         Items in args are added as `annotation` and `annotation_X` where
@@ -156,12 +156,12 @@ class Annotations(HasSlots):
         """
         for idx, arg in enumerate(args):
             valstr = self._translate_key(idx)
-            self.f_set_single(valstr, arg)
+            self.set_single(valstr, arg)
 
         for key, arg in kwargs.items():
-            self.f_set_single(key, arg)
+            self.set_single(key, arg)
 
-    def f_remove(self, key):
+    def remove(self, key):
         """Removes `key` from annotations"""
         key = self._translate_key(key)
         try:
@@ -170,11 +170,11 @@ class Annotations(HasSlots):
             raise AttributeError('Your annotations do not contain %s' % key)
 
 
-    def f_set_single(self, name, data):
+    def set_single(self, name, data):
         """ Sets a single annotation. """
         self._dict[name] = data
 
-    def f_ann_to_str(self):
+    def ann_to_str(self):
         """Returns all annotations lexicographically sorted as a concatenated string."""
         resstr = ''
         for key in sorted(self._dict.keys()):
@@ -182,10 +182,10 @@ class Annotations(HasSlots):
         return resstr[:-2]
 
     def __str__(self):
-        return self.f_ann_to_str()
+        return self.ann_to_str()
 
 
-class WithAnnotations(HasLogger):
+class WithAnnotations(PypetNaming):
 
     __slots__ = ('_annotations',)
 
@@ -193,7 +193,7 @@ class WithAnnotations(HasLogger):
         self._annotations = Annotations()  # The annotation object to handle annotations
 
     @property
-    def v_annotations(self):
+    def annotations(self):
         """ Annotation feature of a trajectory node.
 
         Store some short additional information about your nodes here.
@@ -205,32 +205,32 @@ class WithAnnotations(HasLogger):
         """
         return self._annotations
 
-    def f_set_annotations(self, *args, **kwargs):
+    def set_annotations(self, *args, **kwargs):
         """Sets annotations
 
         Equivalent to calling `v_annotations.f_set(*args,**kwargs)`
 
         """
-        self._annotations.f_set(*args, **kwargs)
+        self._annotations.set(*args, **kwargs)
 
-    def f_get_annotations(self, *args):
+    def get_annotations(self, *args):
         """Returns annotations
 
         Equivalent to `v_annotations.f_get(*args)`
 
         """
-        return self._annotations.f_get(*args)
+        return self._annotations.get(*args)
 
-    def f_ann_to_str(self):
+    def ann_to_str(self):
         """Returns annotations as string
 
         Equivalent to `v_annotations.f_ann_to_str()`
 
         """
-        return self._annotations.f_ann_to_str()
+        return self._annotations.ann_to_str()
 
     @deprecated('Please use `f_ann_to_str.')
-    def f_ann_to_string(self):
+    def ann_to_string(self):
         """Returns annotations as string
 
         Equivalent to `v_annotations.f_ann_to_str()`
@@ -238,5 +238,5 @@ class WithAnnotations(HasLogger):
         DEPRECATED: Please use `f_ann_to_str()` instead.
 
         """
-        return self._annotations.f_ann_to_str()
+        return self._annotations.ann_to_str()
 

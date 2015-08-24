@@ -67,7 +67,8 @@ except ImportError:
 
 import pypet.compat as compat
 import pypet.pypetconstants as pypetconstants
-from pypet.pypetlogging import LoggingManager, HasLogger, simple_logging_config
+from pypet.pypetlogging import LoggingManager, simple_logging_config
+from pypet.namingscheme import PypetNaming
 from pypet.trajectory import Trajectory
 from pypet.storageservice import HDF5StorageService, LazyStorageService
 from pypet.utils.mpwrappers import QueueStorageServiceWriter, LockWrapper, \
@@ -87,10 +88,10 @@ def _pool_single_run(kwargs):
     """Starts a pool single run and passes the storage service"""
     wrap_mode = kwargs['wrap_mode']
     traj = kwargs['traj']
-    traj.v_storage_service = _pool_single_run.storage_service
+    traj.storage_service = _pool_single_run.storage_service
     if wrap_mode == pypetconstants.WRAP_MODE_LOCAL:
         # Free references from previous runs
-        traj.v_storage_service.free_references()
+        traj.storage_service.free_references()
     return _single_run(kwargs)
 
 
@@ -101,7 +102,7 @@ def _frozen_pool_single_run(kwargs):
     frozen_kwargs.update(kwargs)  # in case of `f_run_map`
     # we need to update job's args and kwargs
     traj = frozen_kwargs['traj']
-    traj.f_set_crun(idx)
+    traj.set_crun(idx)
     return _single_run(frozen_kwargs)
 
 
@@ -119,7 +120,7 @@ def _configure_frozen_pool(kwargs):
     _configure_logging(kwargs, extract=False)
     # Reset full copy to it's old value
     traj = kwargs['traj']
-    traj.v_full_copy = kwargs['full_copy']
+    traj.full_copy = kwargs['full_copy']
 
 
 def _process_single_run(kwargs):
@@ -160,7 +161,7 @@ def _configure_frozen_scoop(kwargs):
         _frozen_scoop_single_run.kwargs = shared.getConst(scoop_rev, timeout=424.2)
         frozen_kwargs = _frozen_scoop_single_run.kwargs
         frozen_kwargs['scoop_rev'] = scoop_rev
-        frozen_kwargs['traj'].v_full_copy = frozen_kwargs['full_copy']
+        frozen_kwargs['traj'].full_copy = frozen_kwargs['full_copy']
         if not scoop.IS_ORIGIN:
             _configure_niceness(frozen_kwargs)
             _configure_logging(frozen_kwargs, extract=False)
@@ -175,7 +176,7 @@ def _frozen_scoop_single_run(kwargs):
         frozen_kwargs = _frozen_scoop_single_run.kwargs
         frozen_kwargs.update(kwargs)
         traj = frozen_kwargs['traj']
-        traj.f_set_crun(idx)
+        traj.set_crun(idx)
         return _single_run(frozen_kwargs)
     except Exception:
         scoop.logger.exception('ERROR occurred during a single run!')
@@ -271,7 +272,7 @@ def _single_run(kwargs):
         # result queue is optional
         result_queue = kwargs.get('result_queue', None)
 
-        idx = traj.v_idx
+        idx = traj.idx
         total_runs = len(traj)
 
         pypet_root_logger.info('\n=========================================\n '
@@ -279,17 +280,17 @@ def _single_run(kwargs):
                   '\n=========================================\n' % (idx, total_runs))
 
         # Measure start time
-        traj.f_start_run(turn_into_run=True)
+        traj.start_run(turn_into_run=True)
 
         # Run the job function of the user
         result = runfunc(traj, *runargs, **kwrunparams)
 
         # Store data if desired
         if automatic_storing:
-            traj.f_store()
+            traj.store()
 
         # Measure time of finishing
-        traj.f_finalize_run(store_meta_data=False,
+        traj.finalize_run(store_meta_data=False,
                             clean_up=clean_up_after_run)
 
         pypet_root_logger.info('\n=========================================\n '
@@ -298,13 +299,13 @@ def _single_run(kwargs):
 
         # Add the index to the result and the run information
         if wrap_mode == pypetconstants.WRAP_MODE_LOCAL:
-            result = ((traj.v_idx, result),
-                       traj.f_get_run_information(traj.v_idx, copy=False),
-                       traj.v_storage_service.references)
-            traj.v_storage_service.free_references()
+            result = ((traj.idx, result),
+                       traj.get_run_information(traj.idx, copy=False),
+                       traj.storage_service.references)
+            traj.storage_service.free_references()
         else:
-            result = ((traj.v_idx, result),
-                       traj.f_get_run_information(traj.v_idx, copy=False))
+            result = ((traj.idx, result),
+                       traj.get_run_information(traj.idx, copy=False))
 
         if result_queue is not None:
             result_queue.put(result)
@@ -331,7 +332,7 @@ def _wrap_handling(kwargs):
     # profiler.dump_stats('./queue.profile2')
 
 
-class Environment(HasLogger):
+class Environment(PypetNaming):
     """ The environment to run a parameter exploration.
 
     The first thing you usually do is to create and environment object that takes care about
@@ -666,7 +667,7 @@ class Environment(HasLogger):
 
         .. _pool: https://docs.python.org/2/library/multiprocessing.html
 
-    :param continuable:
+    :param resumable:
 
         Whether the environment should take special care to allow to resume or continue
         crashed trajectories. Default is ``False``.
@@ -682,9 +683,9 @@ class Environment(HasLogger):
 
         The environment will create several `.ecnt` and `.rcnt` files in a folder that you specify
         (see below).
-        Using this data you can continue crashed trajectories.
+        Using this data you can resume crashed trajectories.
 
-        In order to resume trajectories use :func:`~pypet.environment.Environment.f_continue`.
+        In order to resume trajectories use :func:`~pypet.environment.Environment.f_resume`.
 
         Be aware that your individual single runs must be completely independent of one
         another to allow continuing to work. Thus, they should **NOT** be based on shared data
@@ -697,14 +698,14 @@ class Environment(HasLogger):
 
         .. _dill: https://pypi.python.org/pypi/dill
 
-    :param continue_folder:
+    :param resume_folder:
 
-        The folder where the continue files will be placed. Note that *pypet* will create
+        The folder where the resume files will be placed. Note that *pypet* will create
         a sub-folder with the name of the environment.
 
-    :param delete_continue:
+    :param delete_resume:
 
-        If true, *pypet* will delete the continue files after a successful simulation.
+        If true, *pypet* will delete the resume files after a successful simulation.
 
     :param storage_service:
 
@@ -965,6 +966,9 @@ class Environment(HasLogger):
     """
 
     @parse_config
+    @kwargs_api_change('delete_continue', 'delete_resume')
+    @kwargs_api_change('continue_folder', 'resume_folder')
+    @kwargs_api_change('continuable', 'resumable')
     @kwargs_api_change('freeze_pool_input', 'freeze_input')
     @kwargs_api_change('use_hdf5', 'storage_service')
     @kwargs_api_change('dynamically_imported_classes', 'dynamic_imports')
@@ -995,9 +999,9 @@ class Environment(HasLogger):
                  gc_interval=None,
                  clean_up_runs=True,
                  immediate_postproc=False,
-                 continuable=False,
-                 continue_folder=None,
-                 delete_continue=True,
+                 resumable=False,
+                 resume_folder=None,
+                 delete_resume=True,
                  storage_service=HDF5StorageService,
                  git_repository=None,
                  git_message='',
@@ -1014,9 +1018,9 @@ class Environment(HasLogger):
                              'GitPython. Please install the GitPython package to use '
                              'pypet`s git integration.')
 
-        if continuable and dill is None:
+        if resumable and dill is None:
             raise ValueError('Please install `dill` if you want to use the feature to '
-                             'continue halted trajectories')
+                             'resume halted trajectories')
 
         if load_project is None and sumatra_project is not None:
             raise ValueError('`sumatra` package has not been found, either install '
@@ -1043,11 +1047,11 @@ class Environment(HasLogger):
                               pypetconstants.WRAP_MODE_LOCAL,
                               pypetconstants.WRAP_MODE_LOCK,
                               pypetconstants.WRAP_MODE_NETLOCK) and
-                                continuable):
+                                resumable):
             raise ValueError('Continuing trajectories does only work with '
                              '`LOCK`, `NETLOCK` or `LOCAL`wrap mode.')
 
-        if continuable and not automatic_storing:
+        if resumable and not automatic_storing:
             raise ValueError('Continuing only works with `automatic_storing=True`')
 
         if use_scoop and wrap_mode not in (pypetconstants.WRAP_MODE_LOCAL,
@@ -1149,8 +1153,8 @@ class Environment(HasLogger):
                                     wildcard_functions=wildcard_functions,
                                     comment=comment)
 
-            self._timestamp = self.v_trajectory.v_timestamp  # Timestamp of creation
-            self._time = self.v_trajectory.v_time  # Formatted timestamp
+            self._timestamp = self.trajectory.timestamp  # Timestamp of creation
+            self._time = self.trajectory.time  # Formatted timestamp
         else:
             self._traj = trajectory
             # If no new trajectory is created the time of the environment differs
@@ -1172,9 +1176,9 @@ class Environment(HasLogger):
 
         if not new_commit:
             # Otherwise we need to create a novel hexsha
-            self._hexsha = hashlib.sha1(compat.tobytes(self.v_trajectory.v_name +
-                                                       str(self.v_trajectory.v_timestamp) +
-                                                       str(self.v_timestamp) +
+            self._hexsha = hashlib.sha1(compat.tobytes(self.trajectory.name +
+                                                       str(self.trajectory.timestamp) +
+                                                       str(self.timestamp) +
                                                            VERSION)).hexdigest()
 
         # Create the name of the environment
@@ -1205,11 +1209,11 @@ class Environment(HasLogger):
         if storage_service is True: # to allow compatibility with older python versions, i.e. old
             # keyword use_hdf5
             storage_service = HDF5StorageService
-        if self._traj.v_storage_service is not None:
+        if self._traj.storage_service is not None:
             # Use the service of the trajectory
             self._logger.info('Found storage service attached to Trajectory. Will use '
                               'this storage service.')
-            self._storage_service = self.v_trajectory.v_storage_service
+            self._storage_service = self.trajectory.storage_service
         else:
             # Create a new service
             self._storage_service, unused_factory_kwargs = storage_factory(storage_service,
@@ -1219,28 +1223,28 @@ class Environment(HasLogger):
         if lazy_debug and is_debug():
             self._storage_service = LazyStorageService()
 
-        self._traj.v_storage_service = self._storage_service
+        self._traj.storage_service = self._storage_service
 
-        # Create continue path if desired
-        self._continuable = continuable
+        # Create resume path if desired
+        self._resumable = resumable
 
-        if self._continuable:
-            if continue_folder is None:
-                continue_folder = os.path.join(os.getcwd(), 'continue')
-            continue_path = os.path.join(continue_folder, self._traj.v_name)
+        if self._resumable:
+            if resume_folder is None:
+                resume_folder = os.path.join(os.getcwd(), 'resume')
+            resume_path = os.path.join(resume_folder, self._traj.name)
 
             try:
-                os.makedirs(continue_path)
+                os.makedirs(resume_path)
             except OSError as exc:
                 # Directories already exist
                 if exc.errno != 17:
                     raise
         else:
-            continue_path = None
+            resume_path = None
 
-        self._continue_folder = continue_folder
-        self._continue_path = continue_path
-        self._delete_continue = delete_continue
+        self._resume_folder = resume_folder
+        self._resume_path = resume_path
+        self._delete_resume = delete_resume
 
         # Check multiproc
         self._multiproc = multiproc
@@ -1285,11 +1289,11 @@ class Environment(HasLogger):
         # Current run index to avoid quadratic runtime complexity in case of re-running
         self._current_idx = 0
 
-        self._trajectory_name = self._traj.v_name
+        self._trajectory_name = self._traj.name
         for kwarg in list(unused_kwargs):
             try:
                 val = kwargs[kwarg]
-                self._traj.f_set_properties(**{kwarg: val})
+                self._traj.set_properties(**{kwarg: val})
                 self._logger.info('Set trajectory property `%s` to `%s`.' % (kwarg, str(val)))
                 unused_kwargs.remove(kwarg)
             except AttributeError:
@@ -1308,171 +1312,171 @@ class Environment(HasLogger):
         # Add config data to the trajectory
         if self._do_single_runs:
             # Only add parameters if we actually want single runs to be performed
-            config_name = 'environment.%s.multiproc' % self.v_name
-            self._traj.f_add_config(Parameter, config_name, self._multiproc,
-                                    comment='Whether or not to use multiprocessing.').f_lock()
+            config_name = 'environment.%s.multiproc' % self.name
+            self._traj.add_config(Parameter, config_name, self._multiproc,
+                                    comment='Whether or not to use multiprocessing.').lock()
 
             if self._multiproc:
-                config_name = 'environment.%s.use_pool' % self.v_name
-                self._traj.f_add_config(Parameter, config_name, self._use_pool,
+                config_name = 'environment.%s.use_pool' % self.name
+                self._traj.add_config(Parameter, config_name, self._use_pool,
                                         comment='Whether to use a pool of processes or '
                                                 'spawning individual processes for '
-                                                'each run.').f_lock()
+                                                'each run.').lock()
 
-                config_name = 'environment.%s.use_scoop' % self.v_name
-                self._traj.f_add_config(Parameter, config_name, self._use_scoop,
+                config_name = 'environment.%s.use_scoop' % self.name
+                self._traj.add_config(Parameter, config_name, self._use_scoop,
                                         comment='Whether to use scoop to launch single '
-                                                'runs').f_lock()
+                                                'runs').lock()
 
                 if self._niceness is not None:
-                    config_name = 'environment.%s.niceness' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._niceness,
-                                        comment='Niceness value of child processes.').f_lock()
+                    config_name = 'environment.%s.niceness' % self.name
+                    self._traj.add_config(Parameter, config_name, self._niceness,
+                                        comment='Niceness value of child processes.').lock()
 
                 if self._use_pool:
-                    config_name = 'environment.%s.freeze_input' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._freeze_input,
+                    config_name = 'environment.%s.freeze_input' % self.name
+                    self._traj.add_config(Parameter, config_name, self._freeze_input,
                                         comment='If inputs to each run are static and '
                                                 'are not mutated during each run, '
-                                                'can speed up pool running.').f_lock()
+                                                'can speed up pool running.').lock()
 
                 elif self._use_scoop:
                     pass
                 else:
-                    config_name = 'environment.%s.cpu_cap' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._cpu_cap,
+                    config_name = 'environment.%s.cpu_cap' % self.name
+                    self._traj.add_config(Parameter, config_name, self._cpu_cap,
                                             comment='Maximum cpu usage beyond '
                                                     'which no new processes '
-                                                    'are spawned.').f_lock()
+                                                    'are spawned.').lock()
 
-                    config_name = 'environment.%s.memory_cap' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._memory_cap,
+                    config_name = 'environment.%s.memory_cap' % self.name
+                    self._traj.add_config(Parameter, config_name, self._memory_cap,
                                             comment='Tuple, first entry: Maximum RAM usage beyond '
                                                     'which no new processes are spawned; '
                                                     'second entry: Estimated usage per '
-                                                    'process in MB. 0 if not estimated.').f_lock()
+                                                    'process in MB. 0 if not estimated.').lock()
 
-                    config_name = 'environment.%s.swap_cap' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._swap_cap,
+                    config_name = 'environment.%s.swap_cap' % self.name
+                    self._traj.add_config(Parameter, config_name, self._swap_cap,
                                             comment='Maximum Swap memory usage beyond '
                                                     'which no new '
-                                                    'processes are spawned').f_lock()
+                                                    'processes are spawned').lock()
 
-                    config_name = 'environment.%s.immediate_postprocessing' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._immediate_postproc,
+                    config_name = 'environment.%s.immediate_postprocessing' % self.name
+                    self._traj.add_config(Parameter, config_name, self._immediate_postproc,
                                             comment='Whether to use immediate '
-                                                    'postprocessing.').f_lock()
+                                                    'postprocessing.').lock()
 
-                config_name = 'environment.%s.ncores' % self.v_name
-                self._traj.f_add_config(Parameter, config_name, self._ncores,
+                config_name = 'environment.%s.ncores' % self.name
+                self._traj.add_config(Parameter, config_name, self._ncores,
                                         comment='Number of processors in case of '
-                                                'multiprocessing').f_lock()
+                                                'multiprocessing').lock()
 
-                config_name = 'environment.%s.wrap_mode' % self.v_name
-                self._traj.f_add_config(Parameter, config_name, self._wrap_mode,
+                config_name = 'environment.%s.wrap_mode' % self.name
+                self._traj.add_config(Parameter, config_name, self._wrap_mode,
                                         comment='Multiprocessing mode (if multiproc),'
                                                 ' i.e. whether to use QUEUE'
                                                 ' or LOCK or NONE'
-                                                ' for thread/process safe storing').f_lock()
+                                                ' for thread/process safe storing').lock()
 
                 if (self._wrap_mode == pypetconstants.WRAP_MODE_QUEUE or
                                 self._wrap_mode == pypetconstants.WRAP_MODE_PIPE):
-                    config_name = 'environment.%s.queue_maxsize' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._queue_maxsize,
+                    config_name = 'environment.%s.queue_maxsize' % self.name
+                    self._traj.add_config(Parameter, config_name, self._queue_maxsize,
                                         comment='Maximum size of Storage Queue/Pipe in case of '
-                                                'multiprocessing and QUEUE/PIPE wrapping').f_lock()
+                                                'multiprocessing and QUEUE/PIPE wrapping').lock()
 
                 if self._wrap_mode == pypetconstants.WRAP_MODE_NETLOCK:
-                    config_name = 'environment.%s.url' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._url,
+                    config_name = 'environment.%s.url' % self.name
+                    self._traj.add_config(Parameter, config_name, self._url,
                                         comment='URL of lock distribution server, including '
-                                                'protocol and port.').f_lock()
+                                                'protocol and port.').lock()
 
                 if self._wrap_mode == pypetconstants.WRAP_MODE_NETLOCK or self._use_scoop:
-                    config_name = 'environment.%s.timeout' % self.v_name
+                    config_name = 'environment.%s.timeout' % self.name
                     timeout = self._timeout
                     if timeout is None:
                         timeout = -1.0
-                    self._traj.f_add_config(Parameter, config_name, timeout,
+                    self._traj.add_config(Parameter, config_name, timeout,
                                         comment='Timout for scoop and NETLOCK, '
-                                                '-1.0 means no timeout.').f_lock()
+                                                '-1.0 means no timeout.').lock()
 
                 if (self._gc_interval and
                         (self._wrap_mode == pypetconstants.WRAP_MODE_LOCAL or
                             self._wrap_mode == pypetconstants.WRAP_MODE_QUEUE or
                                 self._wrap_mode == pypetconstants.WRAP_MODE_PIPE)):
-                    config_name = 'environment.%s.gc_interval' % self.v_name
-                    self._traj.f_add_config(Parameter, config_name, self._gc_interval,
+                    config_name = 'environment.%s.gc_interval' % self.name
+                    self._traj.add_config(Parameter, config_name, self._gc_interval,
                                         comment='Intervals with which ``gc.collect()`` '
-                                                'is called.').f_lock()
+                                                'is called.').lock()
 
 
             config_name = 'environment.%s.clean_up_runs' % self._name
-            self._traj.f_add_config(Parameter, config_name, self._clean_up_runs,
+            self._traj.add_config(Parameter, config_name, self._clean_up_runs,
                                     comment='Whether or not results should be removed after the '
                                             'completion of a single run. '
                                             'You are not advised to set this '
                                             'to `False`. Only do it if you know what you are '
-                                            'doing.').f_lock()
+                                            'doing.').lock()
 
-            config_name = 'environment.%s.continuable' % self._name
-            self._traj.f_add_config(Parameter, config_name, self._continuable,
-                                    comment='Whether or not a continue file should'
-                                            ' be created. If yes, everything is'
-                                            ' handled by `dill`.').f_lock()
+            config_name = 'environment.%s.resumable' % self._name
+            self._traj.add_config(Parameter, config_name, self._resumable,
+                                    comment='Whether or not resume files should '
+                                            'be created. If yes, everything is '
+                                            'handled by `dill`.').lock()
 
-        config_name = 'environment.%s.trajectory.name' % self.v_name
-        self._traj.f_add_config(Parameter, config_name, self.v_trajectory.v_name,
-                                comment='Name of trajectory').f_lock()
+        config_name = 'environment.%s.trajectory.name' % self.name
+        self._traj.add_config(Parameter, config_name, self.trajectory.name,
+                                comment='Name of trajectory').lock()
 
-        config_name = 'environment.%s.trajectory.timestamp' % self.v_name
-        self._traj.f_add_config(Parameter, config_name, self.v_trajectory.v_timestamp,
-                                comment='Timestamp of trajectory').f_lock()
+        config_name = 'environment.%s.trajectory.timestamp' % self.name
+        self._traj.add_config(Parameter, config_name, self.trajectory.timestamp,
+                                comment='Timestamp of trajectory').lock()
 
-        config_name = 'environment.%s.timestamp' % self.v_name
-        self._traj.f_add_config(Parameter, config_name, self.v_timestamp,
-                                comment='Timestamp of environment creation').f_lock()
+        config_name = 'environment.%s.timestamp' % self.name
+        self._traj.add_config(Parameter, config_name, self.timestamp,
+                                comment='Timestamp of environment creation').lock()
 
-        config_name = 'environment.%s.hexsha' % self.v_name
-        self._traj.f_add_config(Parameter, config_name, self.v_hexsha,
-                                comment='SHA-1 identifier of the environment').f_lock()
+        config_name = 'environment.%s.hexsha' % self.name
+        self._traj.add_config(Parameter, config_name, self.hexsha,
+                                comment='SHA-1 identifier of the environment').lock()
 
-        config_name = 'environment.%s.automatic_storing' % self.v_name
-        if not self._traj.f_contains('config.' + config_name):
-            self._traj.f_add_config(Parameter, config_name, self._automatic_storing,
+        config_name = 'environment.%s.automatic_storing' % self.name
+        if not self._traj.contains('config.' + config_name):
+            self._traj.add_config(Parameter, config_name, self._automatic_storing,
                                     comment='If trajectory should be stored automatically in the '
-                                            'end.').f_lock()
+                                            'end.').lock()
 
         try:
-            config_name = 'environment.%s.script' % self.v_name
-            self._traj.f_add_config(Parameter, config_name, main.__file__,
-                                    comment='Name of the executed main script').f_lock()
+            config_name = 'environment.%s.script' % self.name
+            self._traj.add_config(Parameter, config_name, main.__file__,
+                                    comment='Name of the executed main script').lock()
         except AttributeError:
             pass  # We end up here if we use pypet within an ipython console
 
         for package_name, version in pypetconstants.VERSIONS_TO_STORE.items():
-            config_name = 'environment.%s.versions.%s' % (self.v_name, package_name)
-            self._traj.f_add_config(Parameter, config_name, version,
+            config_name = 'environment.%s.versions.%s' % (self.name, package_name)
+            self._traj.add_config(Parameter, config_name, version,
                                     comment='Particular version of a package or distribution '
                                             'used during experiment. N/A if package could not '
-                                            'be imported.').f_lock()
+                                            'be imported.').lock()
 
-        self._traj.config.environment.v_comment = 'Settings for the different environments ' \
+        self._traj.config.environment.comment = 'Settings for the different environments ' \
                                                   'used to run the experiments'
 
     def __repr__(self):
         """String representation of environment"""
-        repr_string = '<%s %s for Trajectory %s>' % (self.__class__.__name__, self.v_name,
-                                          self.v_trajectory.v_name)
+        repr_string = '<%s %s for Trajectory %s>' % (self.__class__.__name__, self.name,
+                                          self.trajectory.name)
         return repr_string
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.f_disable_logging()
+        self.disable_logging()
 
-    def f_disable_logging(self, remove_all_handlers=True):
+    def disable_logging(self, remove_all_handlers=True):
         """Removes all logging handlers and stops logging to files and logging stdout.
 
         :param remove_all_handlers:
@@ -1484,7 +1488,7 @@ class Environment(HasLogger):
         self._logging_manager.finalize(remove_all_handlers)
 
     @deprecated('Please use assignment in environment constructor.')
-    def f_switch_off_large_overview(self):
+    def switch_off_large_overview(self):
         """ Switches off the tables consuming the most memory.
 
             * Single Run Result Overview
@@ -1497,37 +1501,37 @@ class Environment(HasLogger):
         DEPRECATED: Please pass whether to use the tables to the environment constructor.
 
         """
-        self.f_set_large_overview(0)
+        self.set_large_overview(0)
 
     @deprecated('Please use assignment in environment constructor.')
-    def f_switch_off_all_overview(self):
+    def switch_off_all_overview(self):
         """Switches all tables off.
 
         DEPRECATED: Please pass whether to use the tables to the environment constructor.
 
         """
-        self.f_set_summary(0)
-        self.f_set_small_overview(0)
-        self.f_set_large_overview(0)
+        self.set_summary(0)
+        self.set_small_overview(0)
+        self.set_large_overview(0)
 
     @deprecated('Please use assignment in environment constructor.')
-    def f_switch_off_small_overview(self):
+    def switch_off_small_overview(self):
         """ Switches off small overview tables and switches off `purge_duplicate_comments`.
 
         DEPRECATED: Please pass whether to use the tables to the environment constructor.
 
         """
-        self.f_set_small_overview(0)
+        self.set_small_overview(0)
 
     @deprecated('Please use assignment in environment constructor.')
-    def f_set_large_overview(self, switch):
+    def set_large_overview(self, switch):
         """Switches large overview tables on (`switch=True`) or off (`switch=False`). """
         switch = switch
         self._traj.config.hdf5.overview.results_overview = switch
         self._traj.config.hdf5.overview.derived_parameters_overview = switch
 
     @deprecated('Please use assignment in environment constructor.')
-    def f_set_summary(self, switch):
+    def set_summary(self, switch):
         """Switches summary tables on (`switch=True`) or off (`switch=False`). """
         switch = switch
         self._traj.config.hdf5.overview.derived_parameters_summary = switch
@@ -1535,14 +1539,15 @@ class Environment(HasLogger):
         self._traj.config.hdf5.purge_duplicate_comments = switch
 
     @deprecated('Please use assignment in environment constructor.')
-    def f_set_small_overview(self, switch):
+    def set_small_overview(self, switch):
         """Switches small overview tables on (`switch=True`) or off (`switch=False`). """
         switch = switch
         self._traj.config.hdf5.overview.parameters_overview = switch
         self._traj.config.hdf5.overview.config_overview = switch
         self._traj.config.hdf5.overview.explored_parameters_overview = switch
 
-    def f_continue(self, trajectory_name=None, continue_folder=None):
+    @kwargs_api_change('continue_folder', 'resume_folder')
+    def resume(self, trajectory_name=None, resume_folder=None):
         """Resumes crashed trajectories.
 
         :param trajectory_name:
@@ -1551,11 +1556,11 @@ class Environment(HasLogger):
             is used. Be aware that if `add_time=True` the name you passed to the environment is
             altered and the current date is added.
 
-        :param continue_folder:
+        :param resume_folder:
 
-            The folder where continue files can be found. Do not pass the name of the sub-folder
+            The folder where resume files can be found. Do not pass the name of the sub-folder
             with the trajectory name, but to the name of the parental folder.
-            If not specified the continue folder passed to the environment is used.
+            If not specified the resume folder passed to the environment is used.
 
         :return:
 
@@ -1576,27 +1581,31 @@ class Environment(HasLogger):
 
         """
         if trajectory_name is None:
-            self._trajectory_name = self.v_trajectory.v_name
+            self._trajectory_name = self.trajectory.name
         else:
             self._trajectory_name = trajectory_name
 
-        if continue_folder is not None:
-            self._continue_folder = continue_folder
+        if resume_folder is not None:
+            self._resume_folder = resume_folder
 
         return self._execute_runs(None)
 
+    @deprecated('Please use `f_resume` instead')
+    def f_continue(self, *args, **kwargs):
+        return self.resume(*args, **kwargs)
+
     @property
-    def v_trajectory(self):
+    def trajectory(self):
         """ The trajectory of the Environment"""
         return self._traj
 
     @property
-    def v_traj(self):
+    def traj(self):
         """ Equivalent to env.v_trajectory"""
-        return self.v_trajectory
+        return self.trajectory
 
     @property
-    def v_current_idx(self):
+    def current_idx(self):
         """The current run index that is the next one to be executed.
 
         Can be set manually to make the environment consider old non-completed ones.
@@ -1604,18 +1613,18 @@ class Environment(HasLogger):
         """
         return self._current_idx
 
-    @v_current_idx.setter
-    def v_current_idx(self, idx):
+    @current_idx.setter
+    def current_idx(self, idx):
         self._current_idx = idx
 
     @property
     @deprecated('No longer supported, please don`t use it anymore.')
-    def v_log_path(self):
+    def log_path(self):
         """The full path to the (sub) folder where log files are stored"""
         return ''
 
     @property
-    def v_hexsha(self):
+    def hexsha(self):
         """The SHA1 identifier of the environment.
 
         It is identical to the SHA1 of the git commit.
@@ -1624,21 +1633,21 @@ class Environment(HasLogger):
         return self._hexsha
 
     @property
-    def v_time(self):
+    def time(self):
         """ Time of the creation of the environment, human readable."""
         return self._time
 
     @property
-    def v_timestamp(self):
+    def timestamp(self):
         """Time of creation as python datetime float"""
         return self._timestamp
 
     @property
-    def v_name(self):
+    def name(self):
         """ Name of the Environment"""
         return self._name
 
-    def f_add_postprocessing(self, postproc, *args, **kwargs):
+    def add_postprocessing(self, postproc, *args, **kwargs):
         """ Adds a post processing function.
 
         The environment will call this function via
@@ -1691,7 +1700,7 @@ class Environment(HasLogger):
         self._postproc_args = args
         self._postproc_kwargs = kwargs
 
-    def f_pipeline(self, pipeline):
+    def pipeline(self, pipeline):
         """ You can make *pypet* supervise your whole experiment by defining a pipeline.
 
         `pipeline` is a function that defines the entire experiment. From pre-processing
@@ -1778,13 +1787,13 @@ class Environment(HasLogger):
         self._map_arguments = False
         return self._execute_runs(pipeline)
 
-    def f_pipeline_map(self, pipeline):
+    def pipeline_map(self, pipeline):
         """Creates a pipeline with iterable arguments"""
         self._user_pipeline = True
         self._map_arguments = True
         return self._execute_runs(pipeline)
 
-    def f_run(self, runfunc, *args, **kwargs):
+    def run(self, runfunc, *args, **kwargs):
         """ Runs the experiments and explores the parameter space.
 
         :param runfunc: The task or job to do
@@ -1819,7 +1828,7 @@ class Environment(HasLogger):
         self._map_arguments = False
         return self._execute_runs(pipeline)
 
-    def f_run_map(self, runfunc, *iter_args, **iter_kwargs):
+    def run_map(self, runfunc, *iter_args, **iter_kwargs):
         """Calls runfunc with different args and kwargs each time.
 
         Similar to `:func:`~pypet.environment.Environment.f_run`
@@ -1836,17 +1845,17 @@ class Environment(HasLogger):
         self._map_arguments = True
         return self._execute_runs(pipeline)
 
-    def _trigger_continue_snapshot(self):
+    def _trigger_resume_snapshot(self):
         """ Makes the trajectory continuable in case the user wants that"""
         dump_dict = {}
-        dump_filename = os.path.join(self._continue_path, 'environment.ecnt')
+        dump_filename = os.path.join(self._resume_path, 'environment.ecnt')
 
         # Store the trajectory before the first runs
-        prev_full_copy = self._traj.v_full_copy
+        prev_full_copy = self._traj.full_copy
         dump_dict['full_copy'] = prev_full_copy
-        self._traj.v_full_copy = True
-        prev_storage_service = self._traj.v_storage_service
-        self._traj.v_storage_service = self._storage_service
+        self._traj.full_copy = True
+        prev_storage_service = self._traj.storage_service
+        self._traj.storage_service = self._storage_service
         dump_dict['trajectory'] = self._traj
         dump_dict['args'] = self._args
         dump_dict['kwargs'] = self._kwargs
@@ -1861,8 +1870,8 @@ class Environment(HasLogger):
         dump_file.flush()
         dump_file.close()
 
-        self._traj.v_full_copy = prev_full_copy
-        self._traj.v_storage_service = prev_storage_service
+        self._traj.full_copy = prev_full_copy
+        self._traj.storage_service = prev_storage_service
 
     def _prepare_sumatra(self):
         """ Prepares a sumatra record """
@@ -1870,13 +1879,13 @@ class Environment(HasLogger):
         if reason:
             reason += ' -- '
 
-        if self._traj.v_comment:
-            commentstr = ' (`%s`)' % self._traj.v_comment
+        if self._traj.comment:
+            commentstr = ' (`%s`)' % self._traj.comment
         else:
             commentstr = ''
 
         reason += 'Trajectory %s%s -- Explored Parameters: %s' % \
-                  (self._traj.v_name,
+                  (self._traj.name,
                    commentstr,
                    str(compat.listkeys(self._traj._explored_parameters)))
 
@@ -1884,15 +1893,15 @@ class Environment(HasLogger):
         self._sumatra_reason = reason
         self._loaded_sumatatra_project = load_project(self._sumatra_project)
 
-        if self._traj.f_contains('parameters', shortcuts=False):
-            param_dict = self._traj.parameters.f_to_dict(fast_access=False)
+        if self._traj.contains('parameters', shortcuts=False):
+            param_dict = self._traj.parameters.to_dict(fast_access=False)
 
             for param_name in compat.listkeys(param_dict):
                 param = param_dict[param_name]
-                if param.f_has_range():
-                    param_dict[param_name] = param.f_get_range()
+                if param.has_range():
+                    param_dict[param_name] = param.get_range()
                 else:
-                    param_dict[param_name] = param.f_get()
+                    param_dict[param_name] = param.get()
         else:
             param_dict = {}
 
@@ -1919,79 +1928,79 @@ class Environment(HasLogger):
 
         config_name = 'sumatra.record_%s.label' % str(sumatra_label)
         conf_list = []
-        if not self._traj.f_contains('config.' + config_name):
-            conf1 = self._traj.f_add_config(Parameter, config_name, sumatra_label,
+        if not self._traj.contains('config.' + config_name):
+            conf1 = self._traj.add_config(Parameter, config_name, sumatra_label,
                                     comment='The label of the sumatra record')
             conf_list.append(conf1)
 
         if self._sumatra_reason:
             config_name = 'sumatra.record_%s.reason' % str(sumatra_label)
-            if not self._traj.f_contains('config.' + config_name):
-                conf2 = self._traj.f_add_config(Parameter, config_name, self._sumatra_reason,
+            if not self._traj.contains('config.' + config_name):
+                conf2 = self._traj.add_config(Parameter, config_name, self._sumatra_reason,
                                         comment='Reason of sumatra run.')
                 conf_list.append(conf2)
 
         if self._automatic_storing and conf_list:
-            self._traj.f_store_items(conf_list)
+            self._traj.store_items(conf_list)
 
         self._logger.info('Saved sumatra project record with reason: %s' % self._sumatra_reason)
 
-    def _prepare_continue(self):
+    def _prepare_resume(self):
         """ Prepares the continuation of a crashed trajectory """
-        if not self._continuable:
-            raise RuntimeError('If you create an environment to continue a run, you need to '
+        if not self._resumable:
+            raise RuntimeError('If you create an environment to resume a run, you need to '
                                'set `continuable=True`.')
 
         if not self._do_single_runs:
-            raise RuntimeError('You cannot continue a run if you did create an environment '
+            raise RuntimeError('You cannot resume a run if you did create an environment '
                                'with `do_single_runs=False`.')
 
-        self._continue_path = os.path.join(self._continue_folder, self._trajectory_name)
-        cnt_filename = os.path.join(self._continue_path, 'environment.ecnt')
+        self._resume_path = os.path.join(self._resume_folder, self._trajectory_name)
+        cnt_filename = os.path.join(self._resume_path, 'environment.ecnt')
         cnt_file = open(cnt_filename, 'rb')
-        continue_dict = dill.load(cnt_file)
+        resume_dict = dill.load(cnt_file)
         cnt_file.close()
-        traj = continue_dict['trajectory']
+        traj = resume_dict['trajectory']
 
         # We need to update the information about the trajectory name
-        config_name = 'config.environment.%s.trajectory.name' % self.v_name
-        if self._traj.f_contains(config_name, shortcuts=False):
-            param = self._traj.f_get(config_name, shortcuts=False)
-            param.f_unlock()
-            param.f_set(traj.v_name)
-            param.f_lock()
+        config_name = 'config.environment.%s.trajectory.name' % self.name
+        if self._traj.contains(config_name, shortcuts=False):
+            param = self._traj.get(config_name, shortcuts=False)
+            param.unlock()
+            param.set(traj.name)
+            param.lock()
 
-        config_name = 'config.environment.%s.trajectory.timestamp' % self.v_name
-        if self._traj.f_contains(config_name, shortcuts=False):
-            param = self._traj.f_get(config_name, shortcuts=False)
-            param.f_unlock()
-            param.f_set(traj.v_timestamp)
-            param.f_lock()
+        config_name = 'config.environment.%s.trajectory.timestamp' % self.name
+        if self._traj.contains(config_name, shortcuts=False):
+            param = self._traj.get(config_name, shortcuts=False)
+            param.unlock()
+            param.set(traj.timestamp)
+            param.lock()
 
         # Merge the information so that we keep a record about the current environment
-        if not traj.config.environment.f_contains(self.v_name, shortcuts=False):
+        if not traj.config.environment.contains(self.name, shortcuts=False):
             traj._merge_config(self._traj)
         self._traj = traj
 
         # User's job function
-        self._runfunc = continue_dict['runfunc']
+        self._runfunc = resume_dict['runfunc']
         # Arguments to the user's job function
-        self._args = continue_dict['args']
+        self._args = resume_dict['args']
         # Keyword arguments to the user's job function
-        self._kwargs = continue_dict['kwargs']
+        self._kwargs = resume_dict['kwargs']
         # Postproc Function
-        self._postproc = continue_dict['postproc']
+        self._postproc = resume_dict['postproc']
         # Postprog args
-        self._postproc_args = continue_dict['postproc_args']
+        self._postproc_args = resume_dict['postproc_args']
         # Postproc Kwargs
-        self._postproc_kwargs = continue_dict['postproc_kwargs']
+        self._postproc_kwargs = resume_dict['postproc_kwargs']
 
-        old_start_timestamp = continue_dict['start_timestamp']
+        old_start_timestamp = resume_dict['start_timestamp']
 
         # Unpack the trajectory
-        self._traj.v_full_copy = continue_dict['full_copy']
+        self._traj.full_copy = resume_dict['full_copy']
         # Load meta data
-        self._traj.f_load(load_parameters=pypetconstants.LOAD_NOTHING,
+        self._traj.load(load_parameters=pypetconstants.LOAD_NOTHING,
                           load_derived_parameters=pypetconstants.LOAD_NOTHING,
                           load_results=pypetconstants.LOAD_NOTHING,
                           load_other_data=pypetconstants.LOAD_NOTHING)
@@ -1999,13 +2008,13 @@ class Environment(HasLogger):
         # Now we have to reconstruct previous results
         result_list = []
         full_filename_list = []
-        for filename in os.listdir(self._continue_path):
+        for filename in os.listdir(self._resume_path):
             _, ext = os.path.splitext(filename)
 
             if ext != '.rcnt':
                 continue
 
-            full_filename = os.path.join(self._continue_path, filename)
+            full_filename = os.path.join(self._resume_path, filename)
             cnt_file = open(full_filename, 'rb')
             result_list.append(dill.load(cnt_file))
             cnt_file.close()
@@ -2018,13 +2027,13 @@ class Environment(HasLogger):
             new_result_list.append(result_tuple[0])
         result_sort(new_result_list)
 
-        # Add a config parameter signalling that an experiment was continued, and how many of them
-        config_name = 'environment.%s.continued' % self.v_name
+        # Add a config parameter signalling that an experiment was resumed, and how many of them
+        config_name = 'environment.%s.resumed' % self.name
         if not config_name in self._traj:
-            self._traj.f_add_config(Parameter, config_name, True,
-                                    comment='Added if a crashed trajectory was continued.')
+            self._traj.add_config(Parameter, config_name, True,
+                                    comment='Added if a crashed trajectory was resumed.')
 
-        self._logger.info('I will resume trajectory `%s`.' % self._traj.v_name)
+        self._logger.info('I will resume trajectory `%s`.' % self._traj.name)
 
         return new_result_list
 
@@ -2094,14 +2103,14 @@ class Environment(HasLogger):
             raise RuntimeError('You cannot make a run if you did create an environment '
                                'with `do_single_runs=False`.')
 
-        if self._continuable and os.listdir(self._continue_path):
-            raise RuntimeError('Your continue folder `%s` needs to be empty to allow continuing!')
+        if self._resumable and os.listdir(self._resume_path):
+            raise RuntimeError('Your resume folder `%s` needs to be empty to allow continuing!')
 
         if self._user_pipeline:
             self._logger.info('\n************************************************************\n'
                               'STARTING PPREPROCESSING for trajectory\n`%s`'
                               '\n************************************************************\n' %
-                              self._traj.v_name)
+                              self._traj.name)
 
         # Make some preparations (locking of parameters etc) and store the trajectory
         self._logger.info('I am preparing the Trajectory for the experiment and '
@@ -2109,7 +2118,7 @@ class Environment(HasLogger):
         self._traj._prepare_experiment()
 
         self._logger.info('Initialising the storage for the trajectory.')
-        self._traj.f_store(only_init=True)
+        self._traj.store(only_init=True)
 
     def _show_progress(self, n, total_runs):
         """Displays a progressbar"""
@@ -2133,7 +2142,7 @@ class Environment(HasLogger):
                     # Remember the full copy setting for the frozen input to
                     # change this back once the trajectory is received by
                     # each process
-                    result_dict['full_copy'] = self.v_traj.v_full_copy
+                    result_dict['full_copy'] = self.traj.full_copy
                     if self._map_arguments:
                         del result_dict['runargs']
                         del result_dict['runkwargs']
@@ -2153,7 +2162,7 @@ class Environment(HasLogger):
         for n in compat.xrange(start_run_idx, total_runs):
             self._current_idx = n + 1
             if not self._traj._is_completed(n):
-                self._traj.f_set_crun(n)
+                self._traj.set_crun(n)
                 yield n
 
     def _make_iterator(self, start_run_idx, copy_data=False, **kwargs):
@@ -2181,7 +2190,7 @@ class Environment(HasLogger):
                     if copy_data:
                         copied_kwargs = kwargs.copy()
                         if not self._freeze_input:
-                            copied_kwargs['traj'] = self._traj.f_copy(copy_leaves='explored',
+                            copied_kwargs['traj'] = self._traj.copy(copy_leaves='explored',
                                                                   with_links=True)
                         yield copied_kwargs
                     else:
@@ -2194,7 +2203,7 @@ class Environment(HasLogger):
                     if copy_data:
                         copied_kwargs = kwargs.copy()
                         if not self._freeze_input:
-                            copied_kwargs['traj'] = self._traj.f_copy(copy_leaves='explored',
+                            copied_kwargs['traj'] = self._traj.copy(copy_leaves='explored',
                                                                   with_links=True)
                         yield copied_kwargs
                     else:
@@ -2230,7 +2239,7 @@ class Environment(HasLogger):
             pass
         elif isinstance(postproc_res, dict):
             if postproc_res:
-                self._traj.f_expand(postproc_res)
+                self._traj.expand(postproc_res)
         elif isinstance(postproc_res, tuple):
             expand_dict = postproc_res[0]
             if len(postproc_res) > 1:
@@ -2242,7 +2251,7 @@ class Environment(HasLogger):
             if len(postproc_res) > 4:
                 self._postproc_kwargs = postproc_res[4]
             if expand_dict:
-                self._traj.f_expand(expand_dict)
+                self._traj.expand(expand_dict)
         else:
             self._logger.error('Your postproc result `%s` was not understood.' % str(postproc_res))
 
@@ -2252,12 +2261,12 @@ class Environment(HasLogger):
             start_run_idx = old_traj_length
             repeat = True
 
-            if self._continuable:
+            if self._resumable:
                 self._logger.warning('Continuing a trajectory AND expanding it during runtime is '
                                      'NOT supported properly, there is no guarantee that this '
                                      'works!')
 
-            self._traj.f_store(only_init=True)
+            self._traj.store(only_init=True)
 
             new_traj_length = len(self._traj)
             new_runs = new_traj_length - old_traj_length
@@ -2311,7 +2320,7 @@ class Environment(HasLogger):
         if self._start_timestamp is None:
             self._start_timestamp = time.time()
 
-        if self._map_arguments and self._continuable:
+        if self._map_arguments and self._resumable:
             raise ValueError('You cannot use `f_run_map` or `f_pipeline_map` in combination '
                              'with continuing option.')
 
@@ -2322,7 +2331,7 @@ class Environment(HasLogger):
             results = []
             self._prepare_runs(pipeline)
         else:
-            results = self._prepare_continue()
+            results = self._prepare_resume()
 
         if self._runfunc is not None:
             self._traj._run_by_environment = True
@@ -2337,12 +2346,12 @@ class Environment(HasLogger):
             self._logger.info('\n************************************************************\n'
                               'STARTING FINAL STORING of trajectory\n`%s`'
                               '\n************************************************************\n' %
-                              self._traj.v_name)
-            self._traj.f_store()
+                              self._traj.name)
+            self._traj.store()
             self._logger.info('\n************************************************************\n'
                               'FINISHED FINAL STORING of trajectory\n`%s`.'
                               '\n************************************************************\n' %
-                              self._traj.v_name)
+                              self._traj.name)
 
         self._finish_timestamp = time.time()
 
@@ -2352,50 +2361,50 @@ class Environment(HasLogger):
         self._runtime = str(findatetime - startdatetime)
 
         conf_list = []
-        config_name = 'environment.%s.start_timestamp' % self.v_name
-        if not self._traj.f_contains('config.' + config_name):
-            conf1 = self._traj.f_add_config(Parameter, config_name, self._start_timestamp,
+        config_name = 'environment.%s.start_timestamp' % self.name
+        if not self._traj.contains('config.' + config_name):
+            conf1 = self._traj.add_config(Parameter, config_name, self._start_timestamp,
                                     comment='Timestamp of starting of experiment '
                                             '(when the actual simulation was '
                                             'started (either by calling `f_run`, '
-                                            '`f_continue`, or `f_pipeline`).')
+                                            '`f_resume`, or `f_pipeline`).')
             conf_list.append(conf1)
 
-        config_name = 'environment.%s.finish_timestamp' % self.v_name
-        if not self._traj.f_contains('config.' + config_name):
-            conf2 = self._traj.f_add_config(Parameter, config_name, self._finish_timestamp,
+        config_name = 'environment.%s.finish_timestamp' % self.name
+        if not self._traj.contains('config.' + config_name):
+            conf2 = self._traj.add_config(Parameter, config_name, self._finish_timestamp,
                                             comment='Timestamp of finishing of an experiment.')
         else:
-            conf2 = self._traj.f_get('config.' + config_name)
-            conf2.f_unlock()
-            conf2.f_set(self._finish_timestamp)
+            conf2 = self._traj.get('config.' + config_name)
+            conf2.unlock()
+            conf2.set(self._finish_timestamp)
         conf_list.append(conf2)
 
-        config_name = 'environment.%s.runtime' % self.v_name
-        if not self._traj.f_contains('config.' + config_name):
-            conf3 = self._traj.f_add_config(Parameter, config_name, self._runtime,
+        config_name = 'environment.%s.runtime' % self.name
+        if not self._traj.contains('config.' + config_name):
+            conf3 = self._traj.add_config(Parameter, config_name, self._runtime,
                                             comment='Runtime of whole experiment.')
         else:
-            conf3 = self._traj.f_get('config.' + config_name)
-            conf3.f_unlock()
-            conf3.f_set(self._runtime)
+            conf3 = self._traj.get('config.' + config_name)
+            conf3.unlock()
+            conf3.set(self._runtime)
         conf_list.append(conf3)
 
         if self._automatic_storing:
-            self._traj.f_store_items(conf_list, store_data=pypetconstants.OVERWRITE_DATA)
+            self._traj.store_items(conf_list, store_data=pypetconstants.OVERWRITE_DATA)
 
-        if hasattr(self._traj.v_storage_service, 'finalize'):
+        if hasattr(self._traj.storage_service, 'finalize'):
             # Finalize the storage service if this is supported
-            self._traj.v_storage_service.finalize()
+            self._traj.storage_service.finalize()
 
         all_completed = True
-        for run_name in self._traj.f_get_run_names():
+        for run_name in self._traj.get_run_names():
             if not self._traj._is_completed(run_name):
                 all_completed = False
                 self._logger.error('Run `%s` did NOT complete!' % run_name)
         if all_completed:
             self._logger.info('All runs of trajectory `%s` were completed successfully.' %
-                              self._traj.v_name)
+                              self._traj.name)
 
         if self._sumatra_project is not None:
             self._finish_sumatra()
@@ -2408,29 +2417,29 @@ class Environment(HasLogger):
             wildcards, wc_function = pair
             for jdx, wildcard in enumerate(wildcards):
                 config_name = ('environment.%s.wildcards.function_%d.wildcard_%d' %
-                                (self.v_name, idx, jdx))
-                if not self._traj.f_contains('config.' + config_name):
-                    self._traj.f_add_config(Parameter, config_name, wildcard,
-                                    comment='Wildcard symbol for the wildcard function').f_lock()
+                                (self.name, idx, jdx))
+                if not self._traj.contains('config.' + config_name):
+                    self._traj.add_config(Parameter, config_name, wildcard,
+                                    comment='Wildcard symbol for the wildcard function').lock()
             if hasattr(wc_function, '__name__'):
                 config_name = ('environment.%s.wildcards.function_%d.name' %
-                                (self.v_name, idx))
-                if not self._traj.f_contains('config.' + config_name):
-                    self._traj.f_add_config(Parameter, config_name, wc_function.__name__,
-                                    comment='Nme of wildcard function').f_lock()
+                                (self.name, idx))
+                if not self._traj.contains('config.' + config_name):
+                    self._traj.add_config(Parameter, config_name, wc_function.__name__,
+                                    comment='Nme of wildcard function').lock()
             if wc_function.__doc__:
                 config_name = ('environment.%s.wildcards.function_%d.doc' %
-                                (self.v_name, idx))
-                if not self._traj.f_contains('config.' + config_name):
-                    self._traj.f_add_config(Parameter, config_name, wc_function.__doc__,
-                                    comment='Docstring of wildcard function').f_lock()
+                                (self.name, idx))
+                if not self._traj.contains('config.' + config_name):
+                    self._traj.add_config(Parameter, config_name, wc_function.__doc__,
+                                    comment='Docstring of wildcard function').lock()
             try:
                 source = inspect.getsource(wc_function)
                 config_name = ('environment.%s.wildcards.function_%d.source' %
-                            (self.v_name, idx))
-                if not self._traj.f_contains('config.' + config_name):
-                    self._traj.f_add_config(Parameter, config_name, source,
-                                comment='Source code of wildcard function').f_lock()
+                            (self.name, idx))
+                if not self._traj.contains('config.' + config_name):
+                    self._traj.add_config(Parameter, config_name, source,
+                                comment='Source code of wildcard function').lock()
             except Exception:
                 pass  # We cannot find the source, just leave it
 
@@ -2439,17 +2448,17 @@ class Environment(HasLogger):
         start_run_idx = self._current_idx
         expanded_by_postproc = False
 
-        self._storage_service = self._traj.v_storage_service
+        self._storage_service = self._traj.storage_service
         self._multiproc_wrapper = None
 
-        if self._continuable:
-            self._trigger_continue_snapshot()
+        if self._resumable:
+            self._trigger_resume_snapshot()
 
         self._logger.info(
             '\n************************************************************\n'
             'STARTING runs of trajectory\n`%s`.'
             '\n************************************************************\n' %
-            self._traj.v_name)
+            self._traj.name)
 
         while True:
 
@@ -2491,16 +2500,16 @@ class Environment(HasLogger):
                     '\n************************************************************\n'
                     'FINISHED all runs of trajectory\n`%s`.'
                     '\n************************************************************\n' %
-                    self._traj.v_name)
+                    self._traj.name)
 
-        if self._continuable and self._delete_continue:
-            # We remove all continue files if the simulation was successfully completed
-            shutil.rmtree(self._continue_path)
+        if self._resumable and self._delete_resume:
+            # We remove all resume files if the simulation was successfully completed
+            shutil.rmtree(self._resume_path)
 
         if expanded_by_postproc:
-            config_name = 'environment.%s.postproc_expand' % self.v_name
-            if not self._traj.f_contains('config.' + config_name):
-                self._traj.f_add_config(Parameter, config_name, True,
+            config_name = 'environment.%s.postproc_expand' % self.name
+            if not self._traj.contains('config.' + config_name):
+                self._traj.add_config(Parameter, config_name, True,
                                         comment='Added if trajectory was expanded '
                                                 'by postprocessing.')
 
@@ -2519,8 +2528,8 @@ class Environment(HasLogger):
     def _check_and_store_references(self, result):
         """Checks if reference wrapping and stores references."""
         if self._wrap_mode == pypetconstants.WRAP_MODE_LOCAL:
-            self._multiproc_wrapper.f_store_references(result[2])
-        if self._continuable:
+            self._multiproc_wrapper.store_references(result[2])
+        if self._resumable:
             # [0:2] to not store references
             self._trigger_result_snapshot(result[0:2])
 
@@ -2534,7 +2543,7 @@ class Environment(HasLogger):
         timestamp_str = repr(timestamp).replace('.', '_')
         filename = 'result_%s' % timestamp_str
         extension = '.ncnt'
-        dump_filename = os.path.join(self._continue_path, filename + extension)
+        dump_filename = os.path.join(self._resume_path, filename + extension)
 
         dump_file = open(dump_filename, 'wb')
         dill.dump(result, dump_file, protocol=2)
@@ -2544,7 +2553,7 @@ class Environment(HasLogger):
         # We rename the file to be certain that the trajectory did not crash during taking
         # the snapshot!
         extension = '.rcnt'
-        rename_filename = os.path.join(self._continue_path, filename + extension)
+        rename_filename = os.path.join(self._resume_path, filename + extension)
         shutil.move(dump_filename, rename_filename)
 
     def _execute_multiprocessing(self, start_run_idx, results):
@@ -2574,7 +2583,7 @@ class Environment(HasLogger):
                                log_config=self._logging_manager.log_config,
                                log_stdout=self._logging_manager.log_stdout)
 
-            self._multiproc_wrapper.f_start()
+            self._multiproc_wrapper.start()
         try:
 
             if self._use_pool:
@@ -2588,15 +2597,15 @@ class Environment(HasLogger):
 
                     # To work under windows we must allow the full-copy now!
                     # Because windows does not support forking!
-                    pool_full_copy = self._traj.v_full_copy
-                    self._traj.v_full_copy = True
+                    pool_full_copy = self._traj.full_copy
+                    self._traj.full_copy = True
 
                     initializer = _configure_frozen_pool
                     target = _frozen_pool_single_run
                 else:
                     # We don't want to pickle the storage service
-                    pool_service = self._traj.v_storage_service
-                    self._traj.v_storage_service = None
+                    pool_service = self._traj.storage_service
+                    self._traj.storage_service = None
 
                     init_kwargs = dict(logging_manager=self._logging_manager,
                                        storage_service=pool_service,
@@ -2624,9 +2633,9 @@ class Environment(HasLogger):
                     mpool.join()
                 finally:
                     if self._freeze_input:
-                        self._traj.v_full_copy = pool_full_copy
+                        self._traj.full_copy = pool_full_copy
                     else:
-                        self._traj.v_storage_service = pool_service
+                        self._traj.storage_service = pool_service
 
 
                 self._logger.info('Pool has joined, will delete it.')
@@ -2647,11 +2656,11 @@ class Environment(HasLogger):
                                              'SCOOP.')
                     _frozen_scoop_single_run.kwargs = {}
 
-                    scoop_full_copy = self._traj.v_full_copy
-                    self._traj.v_full_copy = True
+                    scoop_full_copy = self._traj.full_copy
+                    self._traj.full_copy = True
                     init_kwargs = self._make_kwargs()
 
-                    scoop_rev = self.v_name + '_' + str(time.time()).replace('.','_')
+                    scoop_rev = self.name + '_' + str(time.time()).replace('.','_')
                     shared.setConst(**{scoop_rev: init_kwargs})
 
                     iterator = self._make_iterator(start_run_idx,
@@ -2683,7 +2692,7 @@ class Environment(HasLogger):
                         n += 1
                 finally:
                     if self._freeze_input:
-                        self._traj.v_full_copy = scoop_full_copy
+                        self._traj.full_copy = scoop_full_copy
             else:
                 # If we spawn a single process for each run, we need an additional queue
                 # for the results of `runfunc`
@@ -2789,7 +2798,7 @@ class Environment(HasLogger):
 
                                 if self._wrap_mode == pypetconstants.WRAP_MODE_LOCAL:
                                     reference_service = self._traj._storage_service
-                                    self._traj.v_storage_service = self._storage_service
+                                    self._traj.storage_service = self._storage_service
                                 try:
                                     self._logger.info('Performing IMMEDIATE POSTPROCESSING.')
                                     keep_running, start_run_idx, new_runs = \
@@ -2824,13 +2833,13 @@ class Environment(HasLogger):
         finally:
             # Finalize the wrapper
             if self._multiproc_wrapper is not None:
-                self._multiproc_wrapper.f_finalize()
+                self._multiproc_wrapper.finalize()
                 self._multiproc_wrapper = None
 
         return expanded_by_postproc
 
 
-class MultiprocContext(HasLogger):
+class MultiprocContext(PypetNaming):
     """ A lightweight environment that allows the usage of multiprocessing.
 
     Can be used if you don't want a full-blown :class:`~pypet.environment.Environment` to
@@ -2987,7 +2996,7 @@ class MultiprocContext(HasLogger):
 
         self._manager = manager
         self._traj = trajectory
-        self._storage_service = self._traj.v_storage_service
+        self._storage_service = self._traj.storage_service
         self._queue_process = None
         self._pipe_process = None
         self._lock_wrapper = None
@@ -3015,44 +3024,44 @@ class MultiprocContext(HasLogger):
             self._logging_manager.check_log_config()
 
         if full_copy is not None:
-            self._traj.v_full_copy=full_copy
+            self._traj.full_copy=full_copy
 
     @property
-    def v_lock(self):
+    def lock(self):
         return self._lock
 
     @property
-    def v_queue(self):
+    def queue(self):
         return self._queue
 
     @property
-    def v_pipe(self):
+    def pipe(self):
         return self._pipe
 
     @property
-    def v_queue_wrapper(self):
+    def queue_wrapper(self):
         return self._queue_wrapper
 
     @property
-    def v_reference_wrapper(self):
+    def reference_wrapper(self):
         return self._reference_wrapper
 
     @property
-    def v_lock_wrapper(self):
+    def lock_wrapper(self):
         return self._lock_wrapper
 
     @property
-    def v_pipe_wrapper(self):
+    def pipe_wrapper(self):
         return self._pipe_wrapper
 
     def __enter__(self):
-        self.f_start()
+        self.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.f_finalize()
+        self.finalize()
 
-    def f_store_references(self, references):
+    def store_references(self, references):
         """In case of reference wrapping, stores data.
 
         :param references: References dictionary from a ReferenceWrapper.
@@ -3067,7 +3076,7 @@ class MultiprocContext(HasLogger):
         """
         self._reference_store.store_references(references)
 
-    def f_start(self):
+    def start(self):
         """Starts the multiprocess wrapping.
 
         Automatically called when used as context manager.
@@ -3078,7 +3087,7 @@ class MultiprocContext(HasLogger):
         """ Wraps a Storage Service """
 
         # First take care that the storage is initialised
-        self._traj.f_store(only_init=True)
+        self._traj.store(only_init=True)
         if self._wrap_mode == pypetconstants.WRAP_MODE_QUEUE:
             self._prepare_queue()
         elif self._wrap_mode == pypetconstants.WRAP_MODE_LOCK:
@@ -3100,7 +3109,7 @@ class MultiprocContext(HasLogger):
 
     def _prepare_local(self):
         reference_wrapper = ReferenceWrapper()
-        self._traj.v_storage_service = reference_wrapper
+        self._traj.storage_service = reference_wrapper
         self._reference_wrapper = reference_wrapper
         self._reference_store = ReferenceStore(self._storage_service, self._gc_interval)
 
@@ -3136,7 +3145,7 @@ class MultiprocContext(HasLogger):
         # Wrap around the storage service to allow the placement of locks around
         # the storage procedure.
         lock_wrapper = LockWrapper(self._storage_service, self._lock)
-        self._traj.v_storage_service = lock_wrapper
+        self._traj.storage_service = lock_wrapper
         self._lock_wrapper = lock_wrapper
 
     def _prepare_lock(self):
@@ -3153,7 +3162,7 @@ class MultiprocContext(HasLogger):
         # Wrap around the storage service to allow the placement of locks around
         # the storage procedure.
         lock_wrapper = LockWrapper(self._storage_service, self._lock)
-        self._traj.v_storage_service = lock_wrapper
+        self._traj.storage_service = lock_wrapper
         self._lock_wrapper = lock_wrapper
 
     def _prepare_pipe(self):
@@ -3182,7 +3191,7 @@ class MultiprocContext(HasLogger):
         # the pipe and hand it over to
         # the storage service
         self._pipe_wrapper = PipeStorageServiceSender(self._pipe[1], self._lock)
-        self._traj.v_storage_service = self._pipe_wrapper
+        self._traj.storage_service = self._pipe_wrapper
 
     def _prepare_queue(self):
         """ Replaces the trajectory's service with a queue sender and starts the queue process.
@@ -3213,9 +3222,9 @@ class MultiprocContext(HasLogger):
         # the queue and hand it over to
         # the storage service
         self._queue_wrapper = QueueStorageServiceSender(self._queue)
-        self._traj.v_storage_service = self._queue_wrapper
+        self._traj.storage_service = self._queue_wrapper
 
-    def f_finalize(self):
+    def finalize(self):
         """ Restores the original storage service.
 
         If a queue process and a manager were used both are shut down.
@@ -3231,8 +3240,8 @@ class MultiprocContext(HasLogger):
                               'needs to be stored.')
             # We might have passed the queue implicitly,
             # to be sure we add the queue here again
-            self._traj.v_storage_service.queue = self._queue
-            self._traj.v_storage_service.send_done()
+            self._traj.storage_service.queue = self._queue
+            self._traj.storage_service.send_done()
             self._queue_process.join()
             if hasattr(self._queue, 'join'):
                 self._queue.join()
@@ -3248,8 +3257,8 @@ class MultiprocContext(HasLogger):
                               'Hang in there for a little while. '
                               'There still might be some data in the pipe that '
                               'needs to be stored.')
-            self._traj.v_storage_service.conn = self._pipe[1]
-            self._traj.v_storage_service.send_done()
+            self._traj.storage_service.conn = self._pipe[1]
+            self._traj.storage_service.send_done()
             self._pipe_process.join()
             self._pipe[1].close()
             self._pipe[0].close()

@@ -60,7 +60,7 @@ def merge_all_in_folder(folder, ext='.hdf5',
 
     # Merge all trajectories
     first_traj = trajs.pop(0)
-    first_traj.f_merge_many(trajs,
+    first_traj.merge_many(trajs,
                 ignore_data=ignore_data,
                 move_data=move_data,
                 delete_other_trajectory=False,

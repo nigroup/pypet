@@ -71,7 +71,7 @@ class BrianMonitorTest(ResultTest):
 
         self.assertEqual('second', res.spiketimes_unit)
 
-        if res.v_storage_mode == BrianMonitorResult.TABLE_MODE:
+        if res.storage_mode == BrianMonitorResult.TABLE_MODE:
             spike_frame = res.spikes
             spiked_list=sorted(list(set(spike_frame['neuron'].to_dict().values())))
             self.assertEqual(spiked_list, res.neurons_with_spikes)
@@ -90,7 +90,7 @@ class BrianMonitorTest(ResultTest):
 
 
 
-        elif res.v_storage_mode == BrianMonitorResult.ARRAY_MODE:
+        elif res.storage_mode == BrianMonitorResult.ARRAY_MODE:
 
             self.assertTrue('%0' in res.format_string and 'd' in res.format_string)
 
@@ -150,7 +150,7 @@ class BrianMonitorTest(ResultTest):
 
         self.assertEqual('second', res.spiketimes_unit)
 
-        if res.v_storage_mode == BrianMonitorResult.TABLE_MODE:
+        if res.storage_mode == BrianMonitorResult.TABLE_MODE:
             spike_frame = res.spikes
             spiked_list=sorted(list(set(spike_frame['neuron'].to_dict().values())))
             self.assertEqual(spiked_list, res.neurons_with_spikes)
@@ -164,7 +164,7 @@ class BrianMonitorTest(ResultTest):
                 self.assertEqual(float(time), spike_frame['spiketimes'][idx])
 
 
-        elif res.v_storage_mode == BrianMonitorResult.ARRAY_MODE:
+        elif res.storage_mode == BrianMonitorResult.ARRAY_MODE:
 
             self.assertTrue('%0' in res.format_string and 'd' in res.format_string)
 
@@ -203,12 +203,12 @@ class BrianMonitorTest(ResultTest):
             self.assertTrue(comp.nested_equal(str(mon.P), res.source))
 
             if hasattr(res, varname+'_mean'):
-                self.assertTrue(comp.nested_equal(mon.mean, res.f_get(varname+'_mean')))
-                self.assertTrue(comp.nested_equal(mon.var, res.f_get(varname+'_var')))
+                self.assertTrue(comp.nested_equal(mon.mean, res.get(varname+'_mean')))
+                self.assertTrue(comp.nested_equal(mon.var, res.get(varname+'_var')))
             if len(monitor.times)>0:
-                self.assertTrue(comp.nested_equal(mon.values, res.f_get(varname+'_values')))
+                self.assertTrue(comp.nested_equal(mon.values, res.get(varname+'_values')))
 
-            self.assertTrue(comp.nested_equal(repr(mon.unit), res.f_get(varname+'_unit')))
+            self.assertTrue(comp.nested_equal(repr(mon.unit), res.get(varname+'_unit')))
 
 
     def check_state_monitor(self, res, monitor):
@@ -236,18 +236,18 @@ class BrianMonitorTest(ResultTest):
 
         for res in self.results.values():
             with self.assertRaises(TypeError):
-                res.f_set(monitor=self.monitors.values()[0])
+                res.set(monitor=self.monitors.values()[0])
 
         for res in self.results.values():
             with self.assertRaises(TypeError):
-                res.v_storage_mode=BrianMonitorResult.ARRAY_MODE
+                res.storage_mode=BrianMonitorResult.ARRAY_MODE
 
     def test_the_insertion_made_implicetly_in_setUp(self):
 
         for key,monitor in self.monitors.items():
             res = self.results[key]
             self.assertEqual(res.testtestextra,42)
-            self.assertEqual(res.v_monitor_type,monitor.__class__.__name__)
+            self.assertEqual(res.monitor_type,monitor.__class__.__name__)
 
             if isinstance(monitor, SpikeCounter):
                 self.check_spike_counter(res, monitor)
@@ -291,11 +291,11 @@ class BrianMonitorTest(ResultTest):
         res[0] = 'Hi'
         res[777] = 777
 
-        self.assertTrue(getattr(res, res.v_name) == 'Hi')
-        self.assertTrue(res.f_get(0) == 'Hi')
-        self.assertTrue(getattr(res, res.v_name + '_777') == 777)
+        self.assertTrue(getattr(res, res.name) == 'Hi')
+        self.assertTrue(res.get(0) == 'Hi')
+        self.assertTrue(getattr(res, res.name + '_777') == 777)
         self.assertTrue(res[777] == 777)
-        self.assertTrue(res.f_get(777) == 777)
+        self.assertTrue(res.get(777) == 777)
 
         self.assertTrue(0 in res)
         self.assertTrue(777 in res)
@@ -316,7 +316,7 @@ class BrianMonitorTest(ResultTest):
             else:
                 self.results[key]=BrianMonitorResult(key,monitor)
 
-            self.results[key].f_set(testtestextra=42)
+            self.results[key].set(testtestextra=42)
 
 if __name__ == '__main__':
     opt_args = parse_args()

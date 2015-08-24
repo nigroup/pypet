@@ -36,7 +36,7 @@ def explore(traj):
     explored['csr_mat'][0][1,2]=44.0
     explored['csr_mat'][1][2,2]=33
 
-    traj.f_explore(cartesian_product(explored))
+    traj.explore(cartesian_product(explored))
 
 
 def test_run():
@@ -59,9 +59,9 @@ def test_run():
                       use_pool=False,
                       overwrite_file=True)
 
-    traj = env.v_trajectory
+    traj = env.trajectory
 
-    traj.v_standard_parameter=Parameter
+    traj.standard_parameter=Parameter
 
     ## Create some parameters
     param_dict={}
@@ -73,14 +73,14 @@ def test_run():
     traj = traj
     env = env
 
-    traj.f_add_parameter('TEST', 'test_run')
+    traj.add_parameter('TEST', 'test_run')
     ###Explore
     explore(traj)
 
     ### Make a test run
     simple_arg = -13
     simple_kwarg= 13.0
-    env.f_run(simple_calculations,simple_arg,simple_kwarg=simple_kwarg)
+    env.run(simple_calculations,simple_arg,simple_kwarg=simple_kwarg)
 
     size=os.path.getsize(filename)
     size_in_mb = size/1000000.

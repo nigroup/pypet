@@ -40,11 +40,11 @@ class TestConsecutiveMerges(TrajectoryComparator):
 
     def check_if_z_is_correct(self,traj):
         for x in range(len(traj)):
-            traj.v_idx=x
+            traj.idx=x
 
             self.assertTrue(traj.crun.z==traj.x*traj.y,' z != x*y: %s != %s * %s' %
                                                   (str(traj.crun.z),str(traj.x),str(traj.y)))
-        traj.v_idx=-1
+        traj.idx=-1
 
     def set_mode(self):
         self.mode = 'LOCK'
@@ -56,7 +56,7 @@ class TestConsecutiveMerges(TrajectoryComparator):
 
     def explore(self,traj):
         self.explore_dict={'x':range(10),'y':range(10)}
-        traj.f_explore(self.explore_dict)
+        traj.explore(self.explore_dict)
 
     def setUp(self):
         self.envs = []
@@ -85,14 +85,14 @@ class TestConsecutiveMerges(TrajectoryComparator):
         ntrajs = 41
         for irun in range(ntrajs):
             self.envs.append(self._make_env(irun))
-            self.trajs.append(self.envs[-1].v_traj)
-            self.trajs[-1].f_add_parameter('x',0)
-            self.trajs[-1].f_add_parameter('y',0)
+            self.trajs.append(self.envs[-1].traj)
+            self.trajs[-1].add_parameter('x',0)
+            self.trajs[-1].add_parameter('y',0)
             self.explore(self.trajs[-1])
 
         timings = []
         for irun in range(ntrajs):
-            self.envs[irun].f_run(multiply)
+            self.envs[irun].run(multiply)
             start = time.time()
             # self.trajs[irun].f_load_skeleton()
             # end = time.time()
@@ -101,7 +101,7 @@ class TestConsecutiveMerges(TrajectoryComparator):
         print timings
 
         merge_traj = self.trajs[0]
-        merge_traj.f_load_skeleton()
+        merge_traj.load_skeleton()
 
         timings = []
 
@@ -120,11 +120,11 @@ class TestConsecutiveMerges(TrajectoryComparator):
                 config.trace_filter = service_filter
                 print('RUN MERGE')
                 with PyCallGraph(config=config, output=graphviz):
-                    merge_traj.f_merge(self.trajs[irun], backup=False, consecutive_merge=True,
+                    merge_traj.merge(self.trajs[irun], backup=False, consecutive_merge=True,
                                        delete_other_trajectory=True)
                 print('DONE MERGING')
             else:
-                merge_traj.f_merge(self.trajs[irun], backup=False, consecutive_merge=True,
+                merge_traj.merge(self.trajs[irun], backup=False, consecutive_merge=True,
                                    delete_other_trajectory=True)
             end = time.time()
             delta = end -start
@@ -140,12 +140,12 @@ class TestConsecutiveMerges(TrajectoryComparator):
         #     raise ValueError( 'R and Alpha of consecutive merge test %s\n' % str((r,alpha)),
         #         'Timings %s are lineary increasing' % str(timings))
 
-        merge_traj.f_store()
-        merge_traj.f_load(load_data=2)
+        merge_traj.store()
+        merge_traj.load(load_data=2)
         self.check_if_z_is_correct(merge_traj)
 
     def tearDown(self):
         for env in self.envs:
-            env.f_disable_logging()
+            env.disable_logging()
 
 unittest.main(verbosity=2)

@@ -39,7 +39,7 @@ Here are some links to important functions:
     ~trajectory.Trajectory.f_delete_items
     ~trajectory.Trajectory.f_find_idx
     ~trajectory.Trajectory.f_get_run_information
-    ~trajectory.Trajectory.v_crun
+    ~trajectory.Trajectory.v_crun_name
     ~trajectory.Trajectory.v_idx
     ~trajectory.Trajectory.v_standard_parameter
     ~trajectory.Trajectory.v_standard_result

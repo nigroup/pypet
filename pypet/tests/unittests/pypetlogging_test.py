@@ -17,10 +17,10 @@ from pypet.utils.comparisons import nested_equal
 
 class FakeTraj(object):
     def __init__(self):
-        self.v_environment_name = 'env'
-        self.v_name = 'traj'
+        self.environment_name = 'env'
+        self.name = 'traj'
 
-    def f_wildcard(self, card):
+    def wildcard(self, card):
         return 'Ladida'
 
 

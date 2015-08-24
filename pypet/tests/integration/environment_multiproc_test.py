@@ -291,7 +291,7 @@ class MultiprocFrozenPoolQueueTest(TestOtherHDF5Settings2):
 
 
 def new_multiply(traj):
-    if traj.v_full_copy:
+    if traj.full_copy:
         raise RuntimeError('Full copy should be FALSE!')
     return multiply(traj)
 
@@ -314,19 +314,19 @@ class MultiprocFrozenPoolSortQueueTest(ResultSortTest):
         ###Explore
         self.explore(self.traj)
 
-        self.traj.v_full_copy = False
+        self.traj.full_copy = False
 
-        self.env.f_run(new_multiply)
+        self.env.run(new_multiply)
         traj = self.traj
         self.assertTrue(len(traj) == len(compat.listvalues(self.explore_dict)[0]))
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct(traj)
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj,newtraj)
 
@@ -440,7 +440,7 @@ class CapTest(EnvironmentTest):
         CapTest.cap_count += 1
         CapTest.cap_count = CapTest.cap_count % len(cap_dicts)
 
-        traj = env.v_trajectory
+        traj = env.trajectory
 
         ## Create some parameters
         self.param_dict={}

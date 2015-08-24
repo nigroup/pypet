@@ -25,7 +25,7 @@ class CustomOutput(GraphvizOutput):
         return Color.hsv(value / 2 + .5, value, 0.7)
 
 def job(traj):
-    traj.f_ares('$set.$', 42, comment='A result')
+    traj.ares('$set.$', 42, comment='A result')
 
 
 
@@ -38,18 +38,18 @@ def get_runtime(length):
                       log_stdout=False,
                       summary_tables=False, small_overview_tables=False) as env:
 
-        traj = env.v_traj
+        traj = env.traj
 
-        traj.par.f_apar('x', 0, 'parameter')
+        traj.par.apar('x', 0, 'parameter')
 
-        traj.f_explore({'x': range(length)})
+        traj.explore({'x': range(length)})
 
         max_run = 100
 
         for idx in range(len(traj)):
             if idx > max_run:
-                traj.f_get_run_information(idx, copy=False)['completed'] = 1
-        traj.f_store()
+                traj.get_run_information(idx, copy=False)['completed'] = 1
+        traj.store()
 
         if not os.path.isdir('./tmp'):
             os.mkdir('tmp')
@@ -70,7 +70,7 @@ def get_runtime(length):
                 traj._make_single_run(irun+len(traj)/2)
                 # Measure start time
                 traj._set_start()
-                traj.f_ares('$set.$', 42, comment='A result')
+                traj.ares('$set.$', 42, comment='A result')
                 traj._set_finish()
                 traj._store_final(store_data=2)
                 traj._finalize_run()

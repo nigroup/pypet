@@ -18,26 +18,26 @@ from pypet.tests.testutils.data import TrajectoryComparator
 
 def create_link_params(traj):
 
-    traj.f_add_parameter('groupA.groupB.paramA', 5555)
-    traj.f_add_parameter('groupC.groupD.paramB', 42)
-    traj.par.f_add_link('paraAL', traj.f_get('paramA'))
+    traj.add_parameter('groupA.groupB.paramA', 5555)
+    traj.add_parameter('groupC.groupD.paramB', 42)
+    traj.par.add_link('paraAL', traj.get('paramA'))
 
 def explore_params(traj):
 
-    traj.f_explore({'paraAL':[1,2,3,4,5]})
+    traj.explore({'paraAL':[1,2,3,4,5]})
 
 def explore_params2(traj):
 
-    traj.f_explore({'paraAL':[1,6,7,8,9,10,11]})
+    traj.explore({'paraAL':[1,6,7,8,9,10,11]})
 
 def dostuff_and_add_links(traj):
-    traj.f_add_result('idx', traj.v_idx)
-    traj.f_add_result('a.b.c.d', 42)
-    traj.res.runs.crun.f_add_link('paraBL', traj.f_get('paramB'))
-    traj.res.runs.crun.f_add_link('paraCL', traj.f_get('paramB'))
-    traj.res.c.f_add_link('AB', traj.f_get('paramB'))
-    traj.f_add_result('x', traj.AB)
-    traj.res.f_add_link('$', traj.f_get('paraBL'))
+    traj.add_result('idx', traj.idx)
+    traj.add_result('a.b.c.d', 42)
+    traj.res.runs.crun.add_link('paraBL', traj.get('paramB'))
+    traj.res.runs.crun.add_link('paraCL', traj.get('paramB'))
+    traj.res.c.add_link('AB', traj.get('paramB'))
+    traj.add_result('x', traj.AB)
+    traj.res.add_link('$', traj.get('paraBL'))
 
 
 class LinkEnvironmentTest(TrajectoryComparator):
@@ -59,7 +59,7 @@ class LinkEnvironmentTest(TrajectoryComparator):
         self.log_stdout=False
 
     def tearDown(self):
-        self.env.f_disable_logging()
+        self.env.disable_logging()
         super(LinkEnvironmentTest, self).tearDown()
 
     def setUp(self):
@@ -98,9 +98,9 @@ class LinkEnvironmentTest(TrajectoryComparator):
                           pandas_format=self.pandas_format,
                           encoding=self.encoding)
 
-        traj = env.v_trajectory
+        traj = env.trajectory
 
-        traj.v_standard_parameter=Parameter
+        traj.standard_parameter=Parameter
 
         ## Create some parameters
         create_link_params(traj)
@@ -114,17 +114,17 @@ class LinkEnvironmentTest(TrajectoryComparator):
 
 
     def test_run(self):
-        self.env.f_run(dostuff_and_add_links)
+        self.env.run(dostuff_and_add_links)
 
-        self.traj.f_load(load_data=2)
+        self.traj.load(load_data=2)
 
         traj2 = Trajectory()
 
-        traj2.f_load(name=self.traj.v_name, filename=self.filename)
+        traj2.load(name=self.traj.name, filename=self.filename)
 
-        traj2.f_load(load_data=2)
+        traj2.load(load_data=2)
 
-        for run in self.traj.f_get_run_names():
+        for run in self.traj.get_run_names():
             self.assertTrue(self.traj.res.runs[run].paraBL is self.traj.paramB)
 
         self.compare_trajectories(self.traj, traj2)
@@ -159,8 +159,8 @@ class LinkMergeTest(TrajectoryComparator):
 
                           log_stdout=False, log_config=get_log_config())
 
-        self.traj1 = self.env1.v_trajectory
-        self.traj2 = self.env2.v_trajectory
+        self.traj1 = self.env1.trajectory
+        self.traj2 = self.env2.trajectory
 
         create_link_params(self.traj1)
         create_link_params(self.traj2)
@@ -168,24 +168,24 @@ class LinkMergeTest(TrajectoryComparator):
         explore_params(self.traj1)
         explore_params2(self.traj2)
 
-        self.traj1.f_add_derived_parameter('test.$.gg', 42)
-        self.traj2.f_add_derived_parameter('test.$.gg', 44)
+        self.traj1.add_derived_parameter('test.$.gg', 42)
+        self.traj2.add_derived_parameter('test.$.gg', 44)
 
-        self.traj1.f_add_derived_parameter('test.hh.$', 111)
-        self.traj2.f_add_derived_parameter('test.hh.$', 53)
+        self.traj1.add_derived_parameter('test.hh.$', 111)
+        self.traj2.add_derived_parameter('test.hh.$', 53)
 
-        self.env1.f_run(dostuff_and_add_links)
-        self.env2.f_run(dostuff_and_add_links)
+        self.env1.run(dostuff_and_add_links)
+        self.env2.run(dostuff_and_add_links)
 
         old_length = len(self.traj1)
 
-        self.traj1.f_merge(self.traj2, remove_duplicates=True)
+        self.traj1.merge(self.traj2, remove_duplicates=True)
 
-        self.traj1.f_load(load_data=2)
+        self.traj1.load(load_data=2)
 
-        for run in self.traj1.f_get_run_names():
-            self.traj1.f_as_run(run)
-            idx = self.traj1.v_idx
+        for run in self.traj1.get_run_names():
+            self.traj1.as_run(run)
+            idx = self.traj1.idx
             param = self.traj1['test.crun.gg']
             if idx < old_length:
                 self.assertTrue(param == 42)
@@ -200,13 +200,13 @@ class LinkMergeTest(TrajectoryComparator):
 
         self.assertTrue(len(self.traj1) > old_length)
 
-        for irun in range(len(self.traj1.f_get_run_names())):
+        for irun in range(len(self.traj1.get_run_names())):
             self.assertTrue(self.traj1.res['r_%d' % irun] == self.traj1.paramB)
             self.assertTrue(self.traj1.res.runs['r_%d' % irun].paraBL == self.traj1.paramB)
 
         if disable_logging:
-            self.env1.f_disable_logging()
-            self.env2.f_disable_logging()
+            self.env1.disable_logging()
+            self.env2.disable_logging()
 
         return old_length
 
@@ -220,23 +220,23 @@ class LinkMergeTest(TrajectoryComparator):
                                                      'HDF5',
                                                      'backup_test%s.hdf5' % self.trajname1))
 
-        self.traj1.f_load(load_data=2)
+        self.traj1.load(load_data=2)
 
-        self.traj1.f_backup(backup_filename=self.bfilename)
+        self.traj1.backup(backup_filename=self.bfilename)
 
         self.traj3 = load_trajectory(index=-1, filename=self.bfilename, load_all=2)
 
         old_length = len(self.traj1)
 
-        self.traj1.f_merge(self.traj3, backup=False, remove_duplicates=False)
+        self.traj1.merge(self.traj3, backup=False, remove_duplicates=False)
 
         self.assertTrue(len(self.traj1) > old_length)
 
-        self.traj1.f_load(load_data=2)
+        self.traj1.load(load_data=2)
 
-        for run in self.traj1.f_get_run_names():
-            self.traj1.f_as_run(run)
-            idx = self.traj1.v_idx
+        for run in self.traj1.get_run_names():
+            self.traj1.as_run(run)
+            idx = self.traj1.idx
             param = self.traj1['test.crun.gg']
             if idx < prev_old_length or old_length <= idx < prev_old_length + old_length:
                 self.assertTrue(param == 42, '%s != 42' % str(param))
@@ -251,12 +251,12 @@ class LinkMergeTest(TrajectoryComparator):
 
         self.assertTrue(len(self.traj1)>old_length)
 
-        for irun in range(len(self.traj1.f_get_run_names())):
+        for irun in range(len(self.traj1.get_run_names())):
             self.assertTrue(self.traj1.res.runs['r_%d' % irun].paraBL == self.traj1.paramB)
             self.assertTrue(self.traj1.res['r_%d' % irun] == self.traj1.paramB)
 
-        self.env1.f_disable_logging()
-        self.env2.f_disable_logging()
+        self.env1.disable_logging()
+        self.env2.disable_logging()
 
 
 if __name__ == '__main__':

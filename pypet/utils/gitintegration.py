@@ -29,24 +29,24 @@ def add_commit_variables(traj, commit):
     git_commit_name = 'commit_%s_' % git_short_name
     git_commit_name = 'git.' + git_commit_name + git_time_value
 
-    if not traj.f_contains('config.'+git_commit_name, shortcuts=False):
+    if not traj.contains('config.'+git_commit_name, shortcuts=False):
 
         git_commit_name += '.'
         # Add the hexsha
-        traj.f_add_config(git_commit_name+'hexsha', commit.hexsha,
+        traj.add_config(git_commit_name+'hexsha', commit.hexsha,
                           comment='SHA-1 hash of commit')
 
         # Add the description string
-        traj.f_add_config(git_commit_name+'name_rev', commit.name_rev,
+        traj.add_config(git_commit_name+'name_rev', commit.name_rev,
                           comment='String describing the commits hex sha based on '
                                   'the closest Reference')
 
         # Add unix epoch
-        traj.f_add_config(git_commit_name+'committed_date',
+        traj.add_config(git_commit_name+'committed_date',
                           commit.committed_date, comment='Date of commit as unix epoch seconds')
 
         # Add commit message
-        traj.f_add_config(git_commit_name+'message', str(commit.message),
+        traj.add_config(git_commit_name+'message', str(commit.message),
                           comment='The commit message')
 
         # # Add commit author
@@ -73,11 +73,11 @@ def make_git_commit(environment, git_repository, user_message, git_fail):
     repo = git.Repo(git_repository)
     index = repo.index
 
-    traj = environment.v_trajectory
+    traj = environment.trajectory
 
     # Create the commit message and append the trajectory name and comment
-    if traj.v_comment:
-        commentstr = ', Comment: `%s`' % traj.v_comment
+    if traj.comment:
+        commentstr = ', Comment: `%s`' % traj.comment
     else:
         commentstr = ''
 
@@ -85,7 +85,7 @@ def make_git_commit(environment, git_repository, user_message, git_fail):
         user_message += ' -- '
 
     message = '%sTrajectory: `%s`, Time: `%s`, %s' % \
-              (user_message, traj.v_name, traj.v_time, commentstr)
+              (user_message, traj.name, traj.time, commentstr)
 
     # Detect changes:
     diff = index.diff(None)

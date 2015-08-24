@@ -31,12 +31,12 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
         filename = make_temp_dir('hdf5manipulation.hdf5')
         traj = Trajectory(name = make_trajectory_name(self), filename=filename)
 
-        trajname = traj.v_name
-        traj.v_standard_result = SharedResult
+        trajname = traj.name
+        traj.standard_result = SharedResult
 
-        traj.f_store(only_init=True)
+        traj.store(only_init=True)
 
-        traj.f_add_result('shared_data')
+        traj.add_result('shared_data')
 
         thedata = np.zeros((1000,1000))
         myarray = SharedArray('array', traj.shared_data, trajectory=traj)
@@ -47,24 +47,24 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
         # mytable3 = SharedTableResult('jjj.t3', trajectory=traj)
         dadict = {'hi': [ 1,2,3,4,5], 'shu':['bi', 'du', 'da', 'ha', 'hui']}
         dadict2 = {'answer': [42]}
-        res = traj.f_add_result('shared.dfs')
+        res = traj.add_result('shared.dfs')
         res['df'] = SharedPandasFrame()
         res['df'].create_shared_data(data=pd.DataFrame(dadict), trajectory=traj)
-        frame = SharedPandasFrame('df1', traj.f_get('shared.dfs'), trajectory=traj)
+        frame = SharedPandasFrame('df1', traj.get('shared.dfs'), trajectory=traj)
         frame.create_shared_data(data=pd.DataFrame(dadict2),)
         res['df1'] = frame
 
-        traj.f_add_result('mylist', [1,2,3])
-        traj.f_add_result('my.mytuple', k=(1,2,3), wa=42)
-        traj.f_add_result('my.myarray', np.zeros((50,50)))
-        traj.f_add_result('my.myframe', data=pd.DataFrame(dadict2))
-        traj.f_add_result('my.mytable', ObjectTable(data=dadict2))
+        traj.add_result('mylist', [1,2,3])
+        traj.add_result('my.mytuple', k=(1,2,3), wa=42)
+        traj.add_result('my.myarray', np.zeros((50,50)))
+        traj.add_result('my.myframe', data=pd.DataFrame(dadict2))
+        traj.add_result('my.mytable', ObjectTable(data=dadict2))
 
 
         myarray.create_shared_data(data=thedata)
         mytable.create_shared_data(first_row={'hi':compat.tobytes('hi'), 'huhu':np.ones(3)})
 
-        traj.f_store()
+        traj.store()
 
 
         data = myarray.read()
@@ -77,7 +77,7 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
             self.assertTrue(data[2,2] == 10)
 
         self.assertTrue(data[2,2] == 10 )
-        self.assertFalse(traj.v_storage_service.is_open)
+        self.assertFalse(traj.storage_service.is_open)
 
         traj = load_trajectory(name=trajname, filename=filename, load_all=2,
                                dynamic_imports=SharedResult)
@@ -95,12 +95,12 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
 
         dfs = traj.shared.dfs
         make_ordinary_result(traj.shared.dfs, 'df', trajectory=traj)
-        theframe = dfs.f_get('df')
+        theframe = dfs.get('df')
         self.assertTrue(isinstance(dfs, Result))
         self.assertTrue(isinstance(theframe, pd.DataFrame))
         self.assertTrue(theframe['hi'][0] == 1)
 
-        listres = traj.f_get('mylist')
+        listres = traj.get('mylist')
         listres = make_shared_result(listres, 0, trajectory=traj)
         with StorageContextManager(traj) as cm:
             self.assertTrue(listres[0][2] == 3)
@@ -134,10 +134,10 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
         self.assertTrue(theframe['answer'][0] == 42)
 
         myframe = make_ordinary_result(myframe, 'data', trajectory=traj)
-        traj.f_load_item(myframe)
+        traj.load_item(myframe)
         self.assertTrue(myframe.data['answer'][0] == 42)
 
-        mytable = traj.f_get('mytable')
+        mytable = traj.get('mytable')
         mytable = make_shared_result(mytable, 0, traj)
 
         self.assertTrue(isinstance(mytable[0], SharedTable))
@@ -154,22 +154,22 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
     def test_storing_and_manipulating(self):
         filename = make_temp_dir('hdf5manipulation.hdf5')
         traj = Trajectory(name = make_trajectory_name(self), filename=filename)
-        trajname = traj.v_name
+        trajname = traj.name
 
         thedata = np.zeros((1000,1000))
-        res = traj.f_add_result(SharedResult, 'shared')
+        res = traj.add_result(SharedResult, 'shared')
         myarray = SharedArray('array', res, trajectory=traj, add_to_parent=True)
         mytable = SharedTable('t1', res, trajectory=traj, add_to_parent=True)
         mytable2 = SharedTable('t2', res, trajectory=traj, add_to_parent=True)
         mytable3 = SharedTable('t3', res, trajectory=traj, add_to_parent=True)
 
-        traj.f_store(only_init=True)
+        traj.store(only_init=True)
         myarray.create_shared_data(data=thedata)
         mytable.create_shared_data(first_row={'hi':compat.tobytes('hi'), 'huhu':np.ones(3)})
         mytable2.create_shared_data(description={'ha': pt.StringCol(2, pos=0),'haha': pt.FloatCol( pos=1)})
         mytable3.create_shared_data(description={'ha': pt.StringCol(2, pos=0),'haha': pt.FloatCol( pos=1)})
 
-        traj.f_store()
+        traj.store()
 
         newrow = {'ha':'hu', 'haha': 4.0}
 
@@ -194,11 +194,11 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
             self.assertTrue(data[2,2] == 10)
 
         self.assertTrue(data[2,2] == 10 )
-        self.assertFalse(traj.v_storage_service.is_open)
+        self.assertFalse(traj.storage_service.is_open)
 
         traj = load_trajectory(name=trajname, filename=filename)
 
-        traj.f_load(load_data=2)
+        traj.load(load_data=2)
 
         traj.shared.t2.traj = traj
         traj.shared.t1.traj = traj
@@ -214,17 +214,17 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
     def test_compacting(self):
         filename = make_temp_dir('hdf5compacting.hdf5')
         traj = Trajectory(name = make_trajectory_name(self), filename=filename)
-        trajname = traj.v_name
-        traj.v_storage_service.complevel = 7
+        trajname = traj.name
+        traj.storage_service.complevel = 7
 
         first_row = {'ha': compat.tobytes('hi'), 'haha':np.zeros((3,3))}
 
-        traj.f_store(only_init=True)
+        traj.store(only_init=True)
 
-        res1 = traj.f_add_result('My.Tree.Will.Be.Deleted', 42)
-        res2 = traj.f_add_result('Mine.Too.HomeBoy', 42, comment='Don`t cry for me!')
+        res1 = traj.add_result('My.Tree.Will.Be.Deleted', 42)
+        res2 = traj.add_result('Mine.Too.HomeBoy', 42, comment='Don`t cry for me!')
 
-        res = traj.f_add_result(SharedResult, 'myres')
+        res = traj.add_result(SharedResult, 'myres')
 
         res['myres'] = SharedTable()
 
@@ -237,18 +237,18 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
                 for key in first_row:
                     row[key] = first_row[key]
                 row.append()
-        traj.f_store()
+        traj.store()
         del traj
         traj = load_trajectory(name=trajname, filename=filename, load_all=2)
         with StorageContextManager(traj) as cm:
             tb = traj.myres.get_data_node()
             ptcompat.remove_rows(tb, 1000, 10000)
 
-            cm.f_flush_store()
+            cm.flush_store()
             self.assertTrue(traj.myres.nrows == 1001)
 
-        traj.f_delete_item(traj.My, recursive=True)
-        traj.f_delete_item(traj.Mine, recursive=True)
+        traj.delete_item(traj.My, recursive=True)
+        traj.delete_item(traj.Mine, recursive=True)
 
         size =  os.path.getsize(filename)
         get_root_logger().info('Filesize is %s' % str(size))
@@ -266,12 +266,12 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
     def test_all_arrays(self):
         filename = make_temp_dir('hdf5arrays.hdf5')
         traj = Trajectory(name = make_trajectory_name(self), filename=filename)
-        trajname = traj.v_name
+        trajname = traj.name
 
         npearray = np.ones((2,10,3), dtype=np.float)
         thevlarray = np.array([compat.tobytes('j'), 22.2, compat.tobytes('gutter')])
-        traj.f_store(only_init=True)
-        res = traj.f_add_result(SharedResult, 'arrays')
+        traj.store(only_init=True)
+        res = traj.add_result(SharedResult, 'arrays')
         res['carray'] = SharedCArray()
         res['carray'].create_shared_data(shape=(10, 10), atom=pt.atom.FloatAtom())
         res['earray'] = SharedEArray()
@@ -281,7 +281,7 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
         res['array'] = SharedArray()
         res['array'].create_shared_data(data=npearray)
 
-        traj.f_store()
+        traj.store()
 
         traj = load_trajectory(name=trajname, filename=filename, load_all=2,
                                dynamic_imports=SharedResult)
@@ -328,12 +328,12 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
     def test_df(self):
         filename = make_temp_dir('hdf5errors.hdf5')
         traj = Trajectory(name = make_trajectory_name(self), filename=filename)
-        traj.f_store()
+        traj.store()
         dadict = {'hi': [ 1,2,3,4,5], 'shu':['bi', 'du', 'da', 'ha', 'hui']}
         dadict2 = {'answer': [42]}
-        traj.f_add_result(SharedResult, 'dfs.df', SharedPandasFrame()).create_shared_data(data=pd.DataFrame(dadict))
-        traj.f_add_result(SharedResult, 'dfs.df1', SharedPandasFrame()).create_shared_data(data=pd.DataFrame(dadict2))
-        traj.f_add_result(SharedResult, 'dfs.df3', SharedPandasFrame())
+        traj.add_result(SharedResult, 'dfs.df', SharedPandasFrame()).create_shared_data(data=pd.DataFrame(dadict))
+        traj.add_result(SharedResult, 'dfs.df1', SharedPandasFrame()).create_shared_data(data=pd.DataFrame(dadict2))
+        traj.add_result(SharedResult, 'dfs.df3', SharedPandasFrame())
 
         for irun in range(10):
             traj.df3.append(traj.df1.read())
@@ -349,23 +349,23 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
     def test_errors(self):
         filename = make_temp_dir('hdf5errors.hdf5')
         traj = Trajectory(name = make_trajectory_name(self), filename=filename)
-        trajname = traj.v_name
+        trajname = traj.name
 
         npearray = np.ones((2,10,3), dtype=np.float)
         thevlarray = np.array([compat.tobytes('j'), 22.2, compat.tobytes('gutter')])
 
         with self.assertRaises(TypeError):
-            traj.f_add_result(SharedResult, 'arrays.vlarray', SharedVLArray()).create_shared_data(obj=thevlarray)
-        traj.f_store()
+            traj.add_result(SharedResult, 'arrays.vlarray', SharedVLArray()).create_shared_data(obj=thevlarray)
+        traj.store()
         traj.arrays.vlarray.create_shared_data(obj=thevlarray)
-        traj.f_add_result(SharedResult, 'arrays.array', SharedArray()).create_shared_data(data=npearray)
-        traj.arrays.f_add_result(SharedResult, 'super.carray', SharedCArray(),
+        traj.add_result(SharedResult, 'arrays.array', SharedArray()).create_shared_data(data=npearray)
+        traj.arrays.add_result(SharedResult, 'super.carray', SharedCArray(),
                                  comment='carray').create_shared_data(shape=(10, 10), atom=pt.atom.FloatAtom())
-        traj.arrays.f_add_result(SharedResult, 'earray', SharedEArray()).create_shared_data('earray',
+        traj.arrays.add_result(SharedResult, 'earray', SharedEArray()).create_shared_data('earray',
                                                                                             obj=npearray)
 
 
-        traj.f_store()
+        traj.store()
 
         with self.assertRaises(TypeError):
             traj.arrays.array.iter_rows()
@@ -375,11 +375,11 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
             with self.assertRaises(RuntimeError):
                 with StorageContextManager(traj) as cm2:
                     pass
-            self.assertTrue(traj.v_storage_service.is_open)
+            self.assertTrue(traj.storage_service.is_open)
             with self.assertRaises(RuntimeError):
-                StorageContextManager(traj).f_open_store()
+                StorageContextManager(traj).open_store()
 
-        self.assertFalse(traj.v_storage_service.is_open)
+        self.assertFalse(traj.storage_service.is_open)
 
 
 if __name__ == '__main__':

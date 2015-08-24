@@ -129,6 +129,12 @@ comment attribute and
 ``myresult.f_set(mydata=42)`` is the function for adding data to the result container.
 Whereas ``myresult.mydata`` might refer to a data item named ``mydata`` added by the user.
 
+The prefixes are not mandatory and can be ommited. So ``myresult.comment`` works
+as well as ``myresult.v_comment`` or ``traj.f_idx_to_run(42)`` is equivalent to
+``traj.idx_to_run(42)``. It is recommended to only use one of the two schemes and not
+intermix function and property calls with prefixes (``f_`` and ``v_``) and without for
+better readable code.
+
 
 -----------------
 #1 Pre-Processing
@@ -201,7 +207,7 @@ Yet, we will shortly discuss the most important ones here.
     If your experiments are recorded with sumatra_ you can specify the path to your sumatra_
     root folder here. *pypet* will automatically trigger the recording of your experiments
     if you use :func:`~pypet.environment.Environment.f_run`,
-    :func:`~pypet.environment.Environment.f_continue` or
+    :func:`~pypet.environment.Environment.f_resume` or
     :func:`~pypet.environment.Environment.f_pipeline` to start your single runs or whole experiment.
     If you use *pypet* + git_ + sumatra_ there's no doubt that you ensure
     the repeatability of your experiments!
@@ -950,7 +956,7 @@ Furthermore,
 
 
 is an important statement in the code.
-Setting the properties ``v_idx`` or ``v_crun`` or
+Setting the properties ``v_idx`` or ``v_crun_name`` or
 using the function :func:`~pypet.trajectory.Trajectory.f_set_crun` are equivalent.
 These give you a powerful tool in data analysis because they make your trajectory
 behave like a particular single run. Thus, all explored parameter's values will be

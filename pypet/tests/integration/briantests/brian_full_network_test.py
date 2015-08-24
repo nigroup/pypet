@@ -25,21 +25,21 @@ import os
 
 def add_params(traj):
 
-    traj.v_standard_parameter=BrianParameter
-    traj.v_fast_access=True
+    traj.standard_parameter=BrianParameter
+    traj.fast_access=True
 
-    traj.f_add_parameter('Sim.defaultclock', 0.01*ms)
-    traj.f_add_parameter('Net.C',281*pF)
-    traj.f_add_parameter('Net.gL',30*nS)
-    traj.f_add_parameter('Net.EL',-70.6*mV)
-    traj.f_add_parameter('Net.VT',-50.4*mV)
-    traj.f_add_parameter('Net.DeltaT',2*mV)
-    traj.f_add_parameter('Net.tauw',40*ms)
-    traj.f_add_parameter('Net.a',4*nS)
-    traj.f_add_parameter('Net.b',0.08*nA)
-    traj.f_add_parameter('Net.I',.8*nA)
-    traj.f_add_parameter('Net.Vcut',traj.VT+5*traj.DeltaT) # practical threshold condition
-    traj.f_add_parameter('Net.N',100)
+    traj.add_parameter('Sim.defaultclock', 0.01*ms)
+    traj.add_parameter('Net.C',281*pF)
+    traj.add_parameter('Net.gL',30*nS)
+    traj.add_parameter('Net.EL',-70.6*mV)
+    traj.add_parameter('Net.VT',-50.4*mV)
+    traj.add_parameter('Net.DeltaT',2*mV)
+    traj.add_parameter('Net.tauw',40*ms)
+    traj.add_parameter('Net.a',4*nS)
+    traj.add_parameter('Net.b',0.08*nA)
+    traj.add_parameter('Net.I',.8*nA)
+    traj.add_parameter('Net.Vcut',traj.VT+5*traj.DeltaT) # practical threshold condition
+    traj.add_parameter('Net.N',100)
 
     eqs="""
     dvm/dt=(gL*(EL-vm)+gL*DeltaT*exp((vm-VT)/DeltaT)+I-w)/C : volt
@@ -47,8 +47,8 @@ def add_params(traj):
     Vr:volt
     """
 
-    traj.f_add_parameter('Net.eqs', eqs)
-    traj.f_add_parameter('reset', 'vm=Vr;w+=b')
+    traj.add_parameter('Net.eqs', eqs)
+    traj.add_parameter('reset', 'vm=Vr;w+=b')
     pass
 
 def run_net(traj):
@@ -99,23 +99,23 @@ def run_net(traj):
 
     run(25*msecond,report='text')
 
-    traj.v_standard_result = BrianMonitorResult
+    traj.standard_result = BrianMonitorResult
 
-    traj.f_add_result('SpikeMonitor', MSpike)
-    traj.f_add_result('SpikeMonitorAr', MSpike, storage_mode = BrianMonitorResult.ARRAY_MODE)
-    traj.f_add_result('PopulationSpikeCounter', MPopSpike)
-    traj.f_add_result('PopulationRateMonitor',MPopRate)
-    traj.f_add_result('StateMonitorV', MStateV)
-    traj.f_add_result('StateMonitorwMean', MStatewMean)
-    traj.f_add_result('Counts',MCounts)
+    traj.add_result('SpikeMonitor', MSpike)
+    traj.add_result('SpikeMonitorAr', MSpike, storage_mode = BrianMonitorResult.ARRAY_MODE)
+    traj.add_result('PopulationSpikeCounter', MPopSpike)
+    traj.add_result('PopulationRateMonitor',MPopRate)
+    traj.add_result('StateMonitorV', MStateV)
+    traj.add_result('StateMonitorwMean', MStatewMean)
+    traj.add_result('Counts',MCounts)
 
-    traj.f_add_result('StateSpikevmw', MStateSpike)
-    traj.f_add_result('StateSpikevmwAr', MStateSpike,storage_mode = BrianMonitorResult.ARRAY_MODE)
-    traj.f_add_result('MultiState',MMultiState)
-    traj.f_add_result('ISIHistogrammMonitor',ISIHist)
-    traj.f_add_result('RecentStateMonitorV', MRecentStateV)
-    traj.f_add_result('RecentStateMonitorwMean', MRecentStatewMean)
-    traj.f_add_result('VanRossumMetric', VanRossum)
+    traj.add_result('StateSpikevmw', MStateSpike)
+    traj.add_result('StateSpikevmwAr', MStateSpike,storage_mode = BrianMonitorResult.ARRAY_MODE)
+    traj.add_result('MultiState',MMultiState)
+    traj.add_result('ISIHistogrammMonitor',ISIHist)
+    traj.add_result('RecentStateMonitorV', MRecentStateV)
+    traj.add_result('RecentStateMonitorwMean', MRecentStatewMean)
+    traj.add_result('VanRossumMetric', VanRossum)
 
 
 @unittest.skipIf(brian is None, 'Can only be run with brian!')
@@ -124,7 +124,7 @@ class BrianFullNetworkTest(TrajectoryComparator):
     tags = 'brian', 'integration'  # Test tags
 
     def tearDown(self):
-        self.env.f_disable_logging()
+        self.env.disable_logging()
         super(BrianFullNetworkTest, self).tearDown()
 
     def setUp(self):
@@ -141,19 +141,19 @@ class BrianFullNetworkTest(TrajectoryComparator):
                                                         BrianMonitorResult],
                           multiproc=False)
 
-        traj = env.v_trajectory
+        traj = env.trajectory
 
         #env._set_standard_storage()
         #env._hdf5_queue_writer._hdf5storageservice = LazyStorageService()
-        traj = env.v_trajectory
+        traj = env.trajectory
         #traj.set_storage_service(LazyStorageService())
 
         add_params(traj)
         #traj.mode='Parallel'
 
 
-        traj.f_explore(cartesian_product({traj.f_get('N').v_full_name:[50,60],
-                               traj.f_get('tauw').v_full_name:[30*ms,40*ms]}))
+        traj.explore(cartesian_product({traj.get('N').full_name:[50,60],
+                               traj.get('tauw').full_name:[30*ms,40*ms]}))
 
         self.traj = traj
 
@@ -162,11 +162,11 @@ class BrianFullNetworkTest(TrajectoryComparator):
 
 
     def test_net(self):
-        self.env.f_run(run_net)
+        self.env.run(run_net)
 
-        self.traj.f_load(load_derived_parameters=2, load_results=2)
+        self.traj.load(load_derived_parameters=2, load_results=2)
 
-        traj2 = Trajectory(name = self.traj.v_name, add_time=False,
+        traj2 = Trajectory(name = self.traj.name, add_time=False,
                            filename=make_temp_dir(os.path.join(
                                'experiments',
                                'tests',
@@ -176,7 +176,7 @@ class BrianFullNetworkTest(TrajectoryComparator):
                            dynamic_imports=['pypet.brian.parameter.BrianParameter',
                                                         BrianMonitorResult])
 
-        traj2.f_load(load_parameters=2, load_derived_parameters=2, load_results=2)
+        traj2.load(load_parameters=2, load_derived_parameters=2, load_results=2)
 
         self.compare_trajectories(self.traj, traj2)
 
@@ -207,19 +207,19 @@ class BrianFullNetworkMPTest(BrianFullNetworkTest):
                           wrap_mode='QUEUE',
                           ncores=2)
 
-        traj = env.v_trajectory
+        traj = env.trajectory
 
         #env._set_standard_storage()
         #env._hdf5_queue_writer._hdf5storageservice = LazyStorageService()
-        traj = env.v_trajectory
+        traj = env.trajectory
         #traj.set_storage_service(LazyStorageService())
 
         add_params(traj)
         #traj.mode='Parallel'
 
 
-        traj.f_explore(cartesian_product({traj.f_get('N').v_full_name:[50,60],
-                               traj.f_get('tauw').v_full_name:[30*ms,40*ms]}))
+        traj.explore(cartesian_product({traj.get('N').full_name:[50,60],
+                               traj.get('tauw').full_name:[30*ms,40*ms]}))
 
         self.traj = traj
 

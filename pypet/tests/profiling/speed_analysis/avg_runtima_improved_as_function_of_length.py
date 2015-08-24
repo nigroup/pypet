@@ -12,7 +12,7 @@ import time
 SIZE = 100
 
 def job(traj):
-    traj.f_ares('set_%d.$.result' % int(traj.v_idx / SIZE), 42, comment='A result')
+    traj.ares('set_%d.$.result' % int(traj.idx / SIZE), 42, comment='A result')
 
 
 
@@ -24,21 +24,21 @@ def get_runtime(length):
                       overwrite_file=True, purge_duplicate_comments=False,
                       summary_tables=False, small_overview_tables=False) as env:
 
-        traj = env.v_traj
+        traj = env.traj
 
         traj.par.x = 0, 'parameter'
 
-        traj.f_explore({'x': range(length)})
+        traj.explore({'x': range(length)})
 
         max_run = 1000000000
 
         for idx in range(len(traj)):
             if idx > max_run:
-                traj.f_get_run_information(idx, copy=False)['completed'] = 1
+                traj.get_run_information(idx, copy=False)['completed'] = 1
 
-        env.f_run(job)
+        env.run(job)
         end = time.time()
-        dicts = [traj.f_get_run_information(x) for x in range(min(len(traj), max_run))]
+        dicts = [traj.get_run_information(x) for x in range(min(len(traj), max_run))]
     total = end - start
     return total/float(len(traj)), total
 

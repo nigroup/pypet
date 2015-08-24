@@ -10,7 +10,7 @@ import numpy as np
 import time
 
 def job(traj):
-    traj.f_ares('$set.$', 42, comment='A result')
+    traj.ares('$set.$', 42, comment='A result')
 
 
 
@@ -25,11 +25,11 @@ def get_runtime(length):
                       wrap_mode='PIPE', #freeze_input=True,
                       summary_tables=False, small_overview_tables=False) as env:
 
-        traj = env.v_traj
+        traj = env.traj
 
-        traj.par.f_apar('x', 0, 'parameter')
+        traj.par.apar('x', 0, 'parameter')
 
-        traj.f_explore({'x': range(length)})
+        traj.explore({'x': range(length)})
 
         # traj.v_full_copy = False
 
@@ -37,9 +37,9 @@ def get_runtime(length):
 
         for idx in range(len(traj)):
             if idx > max_run:
-                traj.f_get_run_information(idx, copy=False)['completed'] = 1
+                traj.get_run_information(idx, copy=False)['completed'] = 1
         start = time.time()
-        env.f_run(job)
+        env.run(job)
         end = time.time()
         # dicts = [traj.f_get_run_information(x) for x in range(min(len(traj), max_run))]
     total = end - start

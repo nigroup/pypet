@@ -158,25 +158,25 @@ class BaseParameter(NNLeafNode):
         self._full_copy = False
         self._explored = False  # If explored or not
 
-    def f_supports(self, data):
+    def supports(self, data):
         """Checks whether the data is supported by the parameter."""
         return type(data) in pypetconstants.PARAMETER_SUPPORTED_DATA
 
     @property
-    def v_locked(self):
+    def locked(self):
         """Whether or not the parameter is locked and prevents further modification"""
         return self._locked
 
-    def f_supports_fast_access(self):
+    def supports_fast_access(self):
         """Checks if parameter supports fast access.
 
         A parameter supports fast access if it is NOT empty!
 
         """
-        return not self.f_is_empty()
+        return not self.is_empty()
 
     @property
-    def v_explored(self):
+    def explored(self):
         """Whether parameter is explored.
 
         Does not necessarily have to be similar to
@@ -187,7 +187,7 @@ class BaseParameter(NNLeafNode):
         return self._explored
 
     @property
-    def v_full_copy(self):
+    def full_copy(self):
         """Whether or not the full parameter including the range or only the current
         data is copied during pickling.
 
@@ -223,22 +223,22 @@ class BaseParameter(NNLeafNode):
         """
         return self._full_copy
 
-    @v_full_copy.setter
-    def v_full_copy(self, val):
+    @full_copy.setter
+    def full_copy(self, val):
         """Sets the full copy mode"""
         val = bool(val)
         self._full_copy = val
 
     @deprecated(msg='Please use `f_has_range()` instead.')
-    def f_is_array(self):
+    def is_array(self):
         """Returns true if the parameter is explored and contains a range array.
 
         DEPRECATED: Use `f_has_range()` instead.
 
         """
-        return self.f_has_range()
+        return self.has_range()
 
-    def f_has_range(self):
+    def has_range(self):
         """Returns true if the parameter contains a range array.
 
         Not necessarily equal to `v_explored` if the range is removed on
@@ -260,7 +260,7 @@ class BaseParameter(NNLeafNode):
         """
         raise NotImplementedError("Should have implemented this.")
 
-    def f_get_range_length(self):
+    def get_range_length(self):
         """Returns the length of the parameter range.
 
         Raises TypeError if the parameter has no range.
@@ -269,14 +269,14 @@ class BaseParameter(NNLeafNode):
         ``__len__`` appropriately.
 
         """
-        if not self.f_has_range():
+        if not self.has_range():
             raise TypeError('Not applicable, parameter does not have a range')
         elif hasattr(self, '__len__'):
             return len(self)
         else:
             raise NotImplementedError("Should have implemented this.")
 
-    def f_val_to_str(self):
+    def val_to_str(self):
         """String summary of the value handled by the parameter.
 
         Note that representing the parameter as a string accesses its value,
@@ -287,7 +287,7 @@ class BaseParameter(NNLeafNode):
         """
         old_locked = self._locked
         try:
-            return repr(self.f_get())
+            return repr(self.get())
         except Exception:
             return 'No Evaluation possible (yet)!'
         finally:
@@ -314,10 +314,10 @@ class BaseParameter(NNLeafNode):
         :raises: TypeError: If both values are not supported by the parameter.
 
         """
-        if self.f_supports(val1) != self.f_supports(val2):
+        if self.supports(val1) != self.supports(val2):
             return False
 
-        if not self.f_supports(val1) and not self.f_supports(val2):
+        if not self.supports(val1) and not self.supports(val2):
             raise TypeError('I do not support the types of both inputs (`%s` and `%s`),'
                             ' therefore I cannot judge whether the two are equal.' %
                             str(type(val1)), str(type(val2)))
@@ -367,10 +367,10 @@ class BaseParameter(NNLeafNode):
         :raises: TypeError: if both values are not supported by the parameter.
 
         """
-        if self.f_supports(val1) != self.f_supports(val2):
+        if self.supports(val1) != self.supports(val2):
             return False
 
-        if not self.f_supports(val1) and not self.f_supports(val2):
+        if not self.supports(val1) and not self.supports(val2):
             raise TypeError('I do not support the types of both inputs (`%s` and `%s`),'
                             ' therefore I cannot judge whether the two are of same type.' %
                             str(type(val1)), str(type(val2)))
@@ -388,13 +388,13 @@ class BaseParameter(NNLeafNode):
         If the parameter is not explored the length is omitted.
 
         """
-        if self.f_has_range():
-            lenstr = 'len:%d' % self.f_get_range_length()
+        if self.has_range():
+            lenstr = 'len:%d' % self.get_range_length()
         else:
             lenstr = ''
 
-        if self.v_comment:
-            commentstr = '`%s`' % self.v_comment
+        if self.comment:
+            commentstr = '`%s`' % self.comment
         else:
             commentstr = ''
 
@@ -413,15 +413,15 @@ class BaseParameter(NNLeafNode):
         else:
             infostr = ''
 
-        return_string = '%s %s%s' % (self.f_get_class_name(), self.v_full_name, infostr)
+        return_string = '%s %s%s' % (self.get_class_name(), self.full_name, infostr)
 
-        if not self.f_is_empty():
-            return_string += ': ' + self.f_val_to_str()
+        if not self.is_empty():
+            return_string += ': ' + self.val_to_str()
 
         return return_string
 
 
-    def f_unlock(self):
+    def unlock(self):
         """Unlocks the locked parameter.
 
         Please use it very carefully, or best do not use this function at all.
@@ -433,7 +433,7 @@ class BaseParameter(NNLeafNode):
         """
         self._locked = False
 
-    def f_lock(self):
+    def lock(self):
         """Locks the parameter and forbids further manipulation.
 
         Changing the data value or exploration range of the parameter are no longer allowed.
@@ -441,7 +441,7 @@ class BaseParameter(NNLeafNode):
         """
         self._locked = True
 
-    def f_set(self, data):
+    def set(self, data):
         """Sets a data value for a parameter.
 
         Example usage:
@@ -468,9 +468,9 @@ class BaseParameter(NNLeafNode):
         :raises: TypeError if parameter has no range
 
         """
-        return self.f_get_range().__getitem__(idx)
+        return self.get_range().__getitem__(idx)
 
-    def f_get(self):
+    def get(self):
         """Returns the current data value of the parameter and locks the parameter.
 
         :raises: TypeError if the parameter is empty
@@ -487,13 +487,13 @@ class BaseParameter(NNLeafNode):
         """
         raise NotImplementedError("Should have implemented this.")
 
-    def f_get_default(self):
+    def get_default(self):
         """Returns the default value of the parameter and locks it.
         """
         raise NotImplementedError("Should have implemented this.")
 
     @deprecated(msg='Please use `f_get_range()` instead!')
-    def f_get_array(self):
+    def get_array(self):
         """Returns an iterable to iterate over the values of the exploration range.
 
         Note that the returned values should be either a copy of the exploration range
@@ -513,9 +513,9 @@ class BaseParameter(NNLeafNode):
         DEPRECATED: Use `f_get_range()` instead!
 
         """
-        return self.f_get_range()
+        return self.get_range()
 
-    def f_get_range(self, copy=True):
+    def get_range(self, copy=True):
         """Returns an iterable to iterate over the values of the exploration range.
 
         Note that the returned values should be either a copy of the exploration range
@@ -618,12 +618,12 @@ class BaseParameter(NNLeafNode):
         """
         raise NotImplementedError("Should have implemented this.")
 
-    def f_get_class_name(self):
+    def get_class_name(self):
         """ Returns the name of the class i.e. `return self.__class__.__name__`"""
         return self.__class__.__name__
 
 
-    def f_is_empty(self):
+    def is_empty(self):
         """True if no data has been assigned to the parameter.
 
         Example usage:
@@ -656,7 +656,7 @@ class BaseParameter(NNLeafNode):
         """
         raise NotImplementedError("Should have implemented this.")
 
-    def f_empty(self):
+    def empty(self):
         """Erases all data in the parameter.
 
         Does not erase data from disk. So if the parameter has
@@ -765,7 +765,7 @@ class Parameter(BaseParameter):
         self._set_logger()
 
         if data is not None:
-            self.f_set(data)
+            self.set(data)
 
     def _restore_default(self):
         """Restores the default data that was set with the
@@ -790,8 +790,8 @@ class Parameter(BaseParameter):
         """
         self._data = self._default
 
-    @copydoc(BaseParameter.f_is_empty)
-    def f_is_empty(self):
+    @copydoc(BaseParameter.is_empty)
+    def is_empty(self):
         """True if no data has been assigned to the parameter.
 
         Example usage:
@@ -825,7 +825,7 @@ class Parameter(BaseParameter):
         else:
             return 1
 
-    def f_has_range(self):
+    def has_range(self):
         """If the parameter has a range.
 
         Does not have to be `True` if the parameter is explored.
@@ -853,11 +853,11 @@ class Parameter(BaseParameter):
     def __getattr__(self, item):
         """Allows to query for `.data` as an attribute"""
         if item == 'data':
-            return self.f_get()
+            return self.get()
         elif item == 'default':
-            return self.f_get_default()
+            return self.get_default()
         else:
-            raise AttributeError('`%s` object has no attribute `%s`.' % (self.f_get_class_name(),
+            raise AttributeError('`%s` object has no attribute `%s`.' % (self.get_class_name(),
                                                                          item))
 
     def __getitem__(self, item):
@@ -869,25 +869,25 @@ class Parameter(BaseParameter):
 
         """
         if item == 'data':
-            return self.f_get()
+            return self.get()
         elif item == 'default' or item == -1:
-            return self.f_get_default()
+            return self.get_default()
         else:
             return super(Parameter, self).__getitem__(item)
 
     @copydoc(BaseParameter._set_parameter_access)
     def _set_parameter_access(self, idx=0):
-        if idx >= len(self) and self.f_has_range():
+        if idx >= len(self) and self.has_range():
             raise ValueError('You try to access data item No. %d in the parameter range, '
                              'yet there are only %d potential items.' % (idx, len(self)))
-        elif self.f_has_range():
+        elif self.has_range():
             self._data = self._explored_range[idx]
         else:
             self._logger.warning('You try to change the access to a parameter range of parameter'
                                  ' `%s`. The parameter has no range, your setting has no'
                                  ' effect.')
 
-    def f_supports(self, data):
+    def supports(self, data):
         """Checks if input data is supported by the parameter."""
         dtype = type(data)
         if dtype is tuple or dtype is list:
@@ -937,10 +937,10 @@ class Parameter(BaseParameter):
         :raises: TypeError
 
         """
-        if self.f_supports(val1) != self.f_supports(val2):
+        if self.supports(val1) != self.supports(val2):
             return False
 
-        if not self.f_supports(val1) and not self.f_supports(val2):
+        if not self.supports(val1) and not self.supports(val2):
             raise TypeError('I do not support the types of both inputs (`%s` and `%s`),'
                             ' therefore I cannot judge whether the two are of same type.' %
                             str(type(val1)), str(type(val2)))
@@ -963,22 +963,22 @@ class Parameter(BaseParameter):
 
         return True
 
-    @copydoc(BaseParameter.f_set)
-    def f_set(self, data):
+    @copydoc(BaseParameter.set)
+    def set(self, data):
 
-        if self.v_locked:
+        if self.locked:
             raise pex.ParameterLockedException('Parameter `%s` is locked!' % self._full_name)
 
-        if self.f_has_range():
+        if self.has_range():
             raise AttributeError(
                 'Your Parameter is an explored array can no longer change values!')
 
-        if self.v_stored:
+        if self.stored:
             self._logger.debug('You are changing an already stored parameter. If '
                                  'you not explicitly overwrite the data on disk, this change '
                                  'might be lost and not propagated to disk.')
 
-        if not self.f_supports(data):
+        if not self.supports(data):
             raise TypeError('Unsupported data `%s` of type `%s`. '
                             'If you passed a tuple or list, this error might also be caused '
                             'by heterogeneous data within the '
@@ -987,15 +987,15 @@ class Parameter(BaseParameter):
         self._data = data
         self._default = self._data
 
-    @copydoc(BaseParameter.f_get_default)
-    def f_get_default(self):
-        if self.f_is_empty():
-            raise TypeError('Parameter `%s` is empty cannot access data' % self.v_full_name)
+    @copydoc(BaseParameter.get_default)
+    def get_default(self):
+        if self.is_empty():
+            raise TypeError('Parameter `%s` is empty cannot access data' % self.full_name)
 
-        self.f_lock()  # As soon as someone accesses an entry the parameter gets locked
+        self.lock()  # As soon as someone accesses an entry the parameter gets locked
         return self._default
 
-    def f_get_range(self, copy=True):
+    def get_range(self, copy=True):
         """Returns a python iterable containing the exploration range.
 
         :param copy:
@@ -1012,9 +1012,9 @@ class Parameter(BaseParameter):
         :raises: TypeError: If parameter is not explored.
 
         """
-        if not self.f_has_range():
+        if not self.has_range():
             raise TypeError('Your parameter `%s` is not array, so cannot return array.' %
-                            self.v_full_name)
+                            self.full_name)
         elif copy:
             return self._explored_range[:]
         else:
@@ -1044,10 +1044,10 @@ class Parameter(BaseParameter):
         :raises TypeError,ParameterLockedException
 
         """
-        if self.v_locked:
-            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.v_full_name)
+        if self.locked:
+            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.full_name)
 
-        if self.f_has_range():
+        if self.has_range():
             raise TypeError('Your Parameter %s is already explored, cannot _explore it further!' %
                             self._name)
 
@@ -1055,7 +1055,7 @@ class Parameter(BaseParameter):
 
         self._explored_range = data_list
         self._explored = True
-        self.f_lock()
+        self.lock()
 
     def _expand(self, explore_iterable):
         """Explores the parameter according to the iterable and appends to the exploration range.
@@ -1082,17 +1082,17 @@ class Parameter(BaseParameter):
         :raises TypeError, ParameterLockedException
 
         """
-        if self.v_locked:
-            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.v_full_name)
+        if self.locked:
+            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.full_name)
 
-        if not self.f_has_range():
+        if not self.has_range():
             raise TypeError('Your Parameter `%s` is not an array and can therefore '
                             'not be expanded.' % self._name)
 
         data_list = self._data_sanity_checks(explore_iterable)
 
         self._explored_range.extend(data_list)
-        self.f_lock()
+        self.lock()
 
     def _data_sanity_checks(self, explore_iterable):
         """Checks if data values are  valid.
@@ -1105,14 +1105,14 @@ class Parameter(BaseParameter):
 
         for val in explore_iterable:
 
-            if not self.f_supports(val):
+            if not self.supports(val):
                 raise TypeError('%s is of not supported type %s.' % (repr(val), str(type(val))))
 
             if not self._values_of_same_type(val, self._default):
                 raise TypeError(
                     'Data of `%s` is not of the same type as the original entry value, '
                     'new type is %s vs old type %s.' %
-                    (self.v_full_name, str(type(val)), str(type(self._default))))
+                    (self.full_name, str(type(val)), str(type(self._default))))
 
             data_list.append(val)
 
@@ -1133,7 +1133,7 @@ class Parameter(BaseParameter):
         """
         store_dict = {'data': ObjectTable(data={'data': [self._data]})}
 
-        if self.f_has_range():
+        if self.has_range():
             store_dict['explored_data'] = ObjectTable(data={'data': self._explored_range})
 
         self._locked = True
@@ -1148,8 +1148,8 @@ class Parameter(BaseParameter):
         :func:`~pypet.parameter.Parameter._store` method.
 
         """
-        if self.v_locked:
-            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.v_full_name)
+        if self.locked:
+            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.full_name)
 
         self._data = load_dict['data']['data'][0]
         self._default = self._data
@@ -1160,38 +1160,38 @@ class Parameter(BaseParameter):
 
         self._locked = True
 
-    @copydoc(BaseParameter.f_get)
-    def f_get(self):
-        if self.f_is_empty():
-            raise TypeError('Parameter `%s` is empty cannot access data' % self.v_full_name)
+    @copydoc(BaseParameter.get)
+    def get(self):
+        if self.is_empty():
+            raise TypeError('Parameter `%s` is empty cannot access data' % self.full_name)
 
-        self.f_lock()  # As soon as someone accesses an entry the parameter gets locked
+        self.lock()  # As soon as someone accesses an entry the parameter gets locked
         return self._data
 
 
     @copydoc(BaseParameter._shrink)
     def _shrink(self):
 
-        if self.v_locked:
-            raise pex.ParameterLockedException('Parameter %s is locked!' % self.v_full_name)
+        if self.locked:
+            raise pex.ParameterLockedException('Parameter %s is locked!' % self.full_name)
 
-        if not self.f_has_range():
+        if not self.has_range():
             raise TypeError('Cannot shrink Parameter without a range.')
 
-        if self.f_is_empty():
+        if self.is_empty():
             raise TypeError('Cannot shrink empty Parameter.')
 
         del self._explored_range
         self._explored_range = []
         self._explored = False
 
-    @copydoc(BaseParameter.f_empty)
-    def f_empty(self):
+    @copydoc(BaseParameter.empty)
+    def empty(self):
 
-        if self.v_locked:
-            raise pex.ParameterLockedException('Parameter %s is locked!' % self.v_full_name)
+        if self.locked:
+            raise pex.ParameterLockedException('Parameter %s is locked!' % self.full_name)
 
-        if self.f_has_range():
+        if self.has_range():
             self._shrink()
 
         del self._data
@@ -1243,7 +1243,7 @@ class ArrayParameter(Parameter):
         else:
             store_dict = {'data' + ArrayParameter.IDENTIFIER: self._data}
 
-            if self.f_has_range():
+            if self.has_range():
                 # Supports smart storage by hashable arrays
                 # Keys are the hashable arrays or tuples and values are the indices
                 smart_dict = {}
@@ -1312,8 +1312,8 @@ class ArrayParameter(Parameter):
         as it was stored in :func:`~pypet.parameter.ArrayParameter._store`.
 
         """
-        if self.v_locked:
-            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.v_full_name)
+        if self.locked:
+            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.full_name)
 
         try:
             self._data = load_dict['data' + ArrayParameter.IDENTIFIER]
@@ -1352,7 +1352,7 @@ class ArrayParameter(Parameter):
         else:
             return super(ArrayParameter, self)._values_of_same_type(val1, val2)
 
-    def f_supports(self, data):
+    def supports(self, data):
         """Checks if input data is supported by the parameter."""
         dtype = type(data)
         if dtype is tuple or dtype is list and len(data) == 0:
@@ -1360,7 +1360,7 @@ class ArrayParameter(Parameter):
         elif dtype is np.ndarray and data.size == 0 and data.ndim == 1:
                 return True  #  ArrayParameter supports empty numpy arrays
         else:
-            return super(ArrayParameter, self).f_supports(data)
+            return super(ArrayParameter, self).supports(data)
 
 
 class SparseParameter(ArrayParameter):
@@ -1419,7 +1419,7 @@ class SparseParameter(ArrayParameter):
                 spsp.isspmatrix_dia(data))
 
 
-    def f_supports(self, data):
+    def supports(self, data):
         """Sparse matrices support Scipy csr, csc, bsr and dia matrices and everything their parent
         class the :class:`~pypet.parameter.ArrayParameter` supports.
 
@@ -1427,7 +1427,7 @@ class SparseParameter(ArrayParameter):
         if self._is_supported_matrix(data):
             return True
         else:
-            return super(SparseParameter, self).f_supports(data)
+            return super(SparseParameter, self).supports(data)
 
     @staticmethod
     def _serialize_matrix(matrix):
@@ -1548,7 +1548,7 @@ class SparseParameter(ArrayParameter):
             for idx, name in enumerate(rename_list):
                 store_dict[name] = data_list[idx]
 
-            if self.f_has_range():
+            if self.has_range():
                 # # Supports smart storage by hashing
                 smart_dict = {}
 
@@ -1655,8 +1655,8 @@ class SparseParameter(ArrayParameter):
         as it was stored in :func:`~pypet.parameter.SparseParameter._store`.
 
         """
-        if self.v_locked:
-            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.v_full_name)
+        if self.locked:
+            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.full_name)
 
         try:
             is_dia = load_dict['data%sis_dia' % SparseParameter.IDENTIFIER]
@@ -1722,10 +1722,10 @@ class PickleParameter(Parameter):
     def __init__(self, full_name, data=None, comment='', protocol=2):
         super(PickleParameter, self).__init__(full_name, data, comment)
         self._protocol = None
-        self.v_protocol = protocol
+        self.protocol = protocol
 
     @property
-    def v_protocol(self):
+    def protocol(self):
         """ The protocol used to pickle data, default is 0.
 
         See pickle_ documentation for the protocols.
@@ -1735,13 +1735,13 @@ class PickleParameter(Parameter):
         """
         return self._protocol
 
-    @v_protocol.setter
-    def v_protocol(self, value):
+    @protocol.setter
+    def protocol(self, value):
         """Sets the protocol"""
         self._protocol = value
 
 
-    def f_supports(self, data):
+    def supports(self, data):
         """There is no straightforward check if an object can be pickled and this function will
         always return `True`.
 
@@ -1771,11 +1771,11 @@ class PickleParameter(Parameter):
 
         """
         store_dict = {}
-        dump = pickle.dumps(self._data, protocol=self.v_protocol)
+        dump = pickle.dumps(self._data, protocol=self.protocol)
         store_dict['data'] = dump
-        store_dict[PickleParameter.PROTOCOL] = self.v_protocol
+        store_dict[PickleParameter.PROTOCOL] = self.protocol
 
-        if self.f_has_range():
+        if self.has_range():
 
             store_dict['explored_data'] = \
                 ObjectTable(columns=['idx'], index=list(range(len(self))))
@@ -1798,7 +1798,7 @@ class PickleParameter(Parameter):
                 store_dict['explored_data']['idx'][idx] = name_id
 
                 if add:
-                    store_dict[name] = pickle.dumps(val, protocol=self.v_protocol)
+                    store_dict[name] = pickle.dumps(val, protocol=self.protocol)
                     smart_dict[obj_id] = name_id
                     count += 1
 
@@ -1821,18 +1821,18 @@ class PickleParameter(Parameter):
         Sets the `v_protocol` property to the protocol used to store 'data'.
 
         """
-        if self.v_locked:
-            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.v_full_name)
+        if self.locked:
+            raise pex.ParameterLockedException('Parameter `%s` is locked!' % self.full_name)
 
         dump = load_dict['data']
 
         self._data = pickle.loads(dump)
 
         try:
-            self.v_protocol = load_dict[PickleParameter.PROTOCOL]
+            self.protocol = load_dict[PickleParameter.PROTOCOL]
         except KeyError:
             # For backwards compatibility
-            self.v_protocol = PickleParameter._get_protocol(dump)
+            self.protocol = PickleParameter._get_protocol(dump)
 
         if 'explored_data' in load_dict:
             explore_table = load_dict['explored_data']
@@ -1984,7 +1984,7 @@ class Result(BaseResult):
         super(Result, self).__init__(full_name, comment)
         self._data_ = None
         self._set_logger()
-        self.f_set(*args, **kwargs)
+        self.set(*args, **kwargs)
 
     @property
     def _data(self):
@@ -2002,7 +2002,7 @@ class Result(BaseResult):
 
     @property
     @deprecated('No longer supported')
-    def v_no_data_string(self):
+    def no_data_string(self):
         """Whether or not to give a short summarizing string when calling
          :func:`~pypet.parameter.Result.f_val_to_str` or `__str__`.
 
@@ -2015,8 +2015,8 @@ class Result(BaseResult):
                              'longer have an effect. Data will always be printed.')
         return False
 
-    @v_no_data_string.setter
-    def v_no_data_string(self, boolean):
+    @no_data_string.setter
+    def no_data_string(self, boolean):
         """Sets the no_data_string property
 
         DEPRECATED! Does not change anything. Data will always be printed.
@@ -2025,20 +2025,20 @@ class Result(BaseResult):
         self._logger.warning('`v_no_data_string is DEPRECATED. Changes of this property do no '
                              'longer have an effect. Data will always be printed.')
 
-    def f_translate_key(self, key):
+    def translate_key(self, key):
         """Translates integer indeces into the appropriate names"""
         if isinstance(key, int):
             if key == 0:
-                key = self.v_name
+                key = self.name
             else:
-                key = self.v_name + '_%d' % key
+                key = self.name + '_%d' % key
         return key
 
     def __contains__(self, key):
-        key = self.f_translate_key(key)
+        key = self.translate_key(key)
         return key in self._data
 
-    def f_val_to_str(self):
+    def val_to_str(self):
         """Summarizes data handled by the result as a string.
 
         Calls `__repr__` on all handled data. Data is NOT ordered.
@@ -2084,16 +2084,16 @@ class Result(BaseResult):
         If the comment is the empty string, the comment is omitted.
 
         """
-        datastr = self.f_val_to_str()
-        return_string = '%s %s' % (self.f_get_class_name(), self.v_full_name)
-        if self.v_comment:
-            return_string += ' (`%s`)' % self.v_comment
+        datastr = self.val_to_str()
+        return_string = '%s %s' % (self.get_class_name(), self.full_name)
+        if self.comment:
+            return_string += ' (`%s`)' % self.comment
         if datastr:
             return_string += ': ' + datastr
 
         return return_string
 
-    def f_to_dict(self, copy=True):
+    def to_dict(self, copy=True):
         """Returns all handled data as a dictionary.
 
         :param copy:
@@ -2108,7 +2108,7 @@ class Result(BaseResult):
         else:
             return self._data
 
-    def f_is_empty(self):
+    def is_empty(self):
         """True if no data has been put into the result.
 
         Also True if all data has been erased via :func:`~pypet.parameter.Result.f_empty`.
@@ -2116,11 +2116,11 @@ class Result(BaseResult):
         """
         return len(self._data) == 0
 
-    @copydoc(BaseResult.f_empty)
-    def f_empty(self):
+    @copydoc(BaseResult.empty)
+    def empty(self):
         self._data_ = None
 
-    def f_set(self, *args, **kwargs):
+    def set(self, *args, **kwargs):
         """ Method to put data into the result.
 
         :param args:
@@ -2148,17 +2148,15 @@ class Result(BaseResult):
 
         """
         for idx, arg in enumerate(args):
-            valstr = self.f_translate_key(idx)
-            self.f_set_single(valstr, arg)
+            valstr = self.translate_key(idx)
+            self.set_single(valstr, arg)
 
         for key, arg in kwargs.items():
-            self.f_set_single(key, arg)
-
+            self.set_single(key, arg)
 
     def __getitem__(self, name):
         """ Equivalent to calling `f_get`"""
-        return self.f_get(name)
-
+        return self.get(name)
 
     def __setitem__(self, key, value):
         """Almost equivalent to calling __setattr__.
@@ -2166,15 +2164,14 @@ class Result(BaseResult):
         Treats integer values as `f_get`.
 
         """
-        key = self.f_translate_key(key)
-
-        setattr(self, key, value)
+        key = self.translate_key(key)
+        self.set_single(key, value)
 
     def __iter__(self):
         """Equivalent to iterating over the keys of the data dictionary."""
         return self._data.__iter__()
 
-    def f_get(self, *args):
+    def get(self, *args):
         """Returns items handled by the result.
 
          If only a single name is given, a single data item is returned. If several names are
@@ -2209,20 +2206,20 @@ class Result(BaseResult):
             elif len(self._data) > 1:
                 raise ValueError('Your result `%s` contains more than one entry: '
                                  '`%s` Please use >>f_get<< with one of these.' %
-                                 (self.v_full_name, str(compat.listkeys(self._data))))
+                                 (self.full_name, str(compat.listkeys(self._data))))
             else:
                 raise AttributeError('Your result `%s` is empty, cannot access data.' %
-                                     self.v_full_name)
+                                     self.full_name)
 
         result_list = []
         for name in args:
-            name = self.f_translate_key(name)
+            name = self.translate_key(name)
             if not name in self._data:
                 if name == 'data' and len(self._data) == 1:
                     return self._data[compat.listkeys(self._data)[0]]
                 else:
                     raise AttributeError('`%s` is not part of your result `%s`.' %
-                                         (name, self.v_full_name))
+                                         (name, self.full_name))
 
             result_list.append(self._data[name])
 
@@ -2231,7 +2228,7 @@ class Result(BaseResult):
         else:
             return result_list
 
-    def f_set_single(self, name, item):
+    def set_single(self, name, item):
         """Sets a single data item of the result.
 
         Raises TypeError if the type of the outer data structure is not understood.
@@ -2252,7 +2249,7 @@ class Result(BaseResult):
 
         """
 
-        if self.v_stored:
+        if self.stored:
             self._logger.debug('You are changing an already stored result. If '
                                  'you not explicitly overwrite the data on disk, this change '
                                  'might be lost and not propagated to disk.')
@@ -2262,7 +2259,7 @@ class Result(BaseResult):
             # self._check_if_empty(item, name) # No longer needed
 
             if name in self._data:
-                self._logger.debug('Replacing `%s` in result `%s`.' % (name, self.v_full_name))
+                self._logger.debug('Replacing `%s` in result `%s`.' % (name, self.full_name))
 
             self._data[name] = item
         else:
@@ -2273,13 +2270,13 @@ class Result(BaseResult):
         """Checks if outer data structure is supported."""
         return type(item) in Result.SUPPORTED_DATA
 
-    def f_supports_fast_access(self):
+    def supports_fast_access(self):
         """Whether or not the result supports fast access.
 
         A result supports fast access if it contains exactly one item with the name of the result.
 
         """
-        return len(self._data) == 1 and self.v_name in self._data
+        return len(self._data) == 1 and self.name in self._data
 
     def _store(self):
         """Returns a storage dictionary understood by the storage service.
@@ -2295,10 +2292,10 @@ class Result(BaseResult):
         """Loads data from load_dict"""
         self._data_ = load_dict
 
-    def f_remove(self, *args):
+    def remove(self, *args):
         """Removes `*args` from the result"""
         for arg in args:
-            arg = self.f_translate_key(arg)
+            arg = self.translate_key(arg)
             if arg in self._data:
                 del self._data[arg]
             else:
@@ -2306,7 +2303,7 @@ class Result(BaseResult):
 
     def __delitem__(self, key):
         """ Deletes an item, see also __delattr__"""
-        self.f_remove(key)
+        self.remove(key)
 
     def __delattr__(self, item):
         """ Deletes an item from the result.
@@ -2331,7 +2328,7 @@ class Result(BaseResult):
         if item[0] == '_':
             super(Result, self).__delattr__(item)
         else:
-            self.f_remove(item)
+            self.remove(item)
 
     def __setattr__(self, key, value):
         if key[0] == '_':
@@ -2345,10 +2342,10 @@ class Result(BaseResult):
             else:
                 python_property.fset(self, value)
         else:
-            self.f_set_single(key, value)
+            self.set_single(key, value)
 
     def __getattr__(self, name):
-        return self.f_get(name)
+        return self.get(name)
 
 
 class SparseResult(Result):
@@ -2366,14 +2363,14 @@ class SparseResult(Result):
 
     __slots__ = ()
 
-    @copydoc(Result.f_set_single)
-    def f_set_single(self, name, item):
+    @copydoc(Result.set_single)
+    def set_single(self, name, item):
         if SparseResult.IDENTIFIER in name:
             raise AttributeError('Your result name contains the identifier for sparse matrices,'
                                  ' please do not use %s in your result names.' %
                                  SparseResult.IDENTIFIER)
         else:
-            super(SparseResult, self).f_set_single(name, item)
+            super(SparseResult, self).set_single(name, item)
 
 
     def _supports(self, item):
@@ -2466,13 +2463,13 @@ class PickleResult(Result):
     def __init__(self, full_name, *args, **kwargs):
         self._protocol = None
         protocol = kwargs.pop('protocol', 0)
-        self.v_protocol = protocol
+        self.protocol = protocol
 
         super(PickleResult, self).__init__(full_name, *args, **kwargs)
 
 
     @property
-    def v_protocol(self):
+    def protocol(self):
         """ The protocol used to pickle data, default is 0.
 
         See pickle_ documentation for the protocols.
@@ -2482,19 +2479,19 @@ class PickleResult(Result):
         """
         return self._protocol
 
-    @v_protocol.setter
-    def v_protocol(self, value):
+    @protocol.setter
+    def protocol(self, value):
         """Sets the protocol"""
         self._protocol = value
 
-    def f_set_single(self, name, item):
+    def set_single(self, name, item):
         """Adds a single data item to the pickle result.
 
          Note that it is NOT checked if the item can be pickled!
 
         """
 
-        if self.v_stored:
+        if self.stored:
             self._logger.debug('You are changing an already stored result. If '
                                  'you not explicitly overwrite the data on disk, this change '
                                  'might be lost and not propagated to disk.')
@@ -2509,8 +2506,8 @@ class PickleResult(Result):
         """Returns a dictionary containing pickle dumps"""
         store_dict = {}
         for key, val in self._data.items():
-            store_dict[key] = pickle.dumps(val, protocol=self.v_protocol)
-        store_dict[PickleResult.PROTOCOL] = self.v_protocol
+            store_dict[key] = pickle.dumps(val, protocol=self.protocol)
+        store_dict[PickleResult.PROTOCOL] = self.protocol
         return store_dict
 
     def _load(self, load_dict):
@@ -2520,11 +2517,11 @@ class PickleResult(Result):
 
         """
         try:
-            self.v_protocol = load_dict.pop(PickleParameter.PROTOCOL)
+            self.protocol = load_dict.pop(PickleParameter.PROTOCOL)
         except KeyError:
             # For backwards compatibility
             dump = next(compat.itervalues(load_dict))
-            self.v_protocol = PickleParameter._get_protocol(dump)
+            self.protocol = PickleParameter._get_protocol(dump)
         for key in load_dict:
             val = load_dict[key]
             self._data[key] = pickle.loads(val)

@@ -47,7 +47,7 @@ def compact_hdf5_file(filename, name=None, index=None, keep_backup=True):
 
     tmp_traj = load_trajectory(name, index, as_new=False, load_all=pypetconstants.LOAD_NOTHING,
                                force=True, filename=filename)
-    service = tmp_traj.v_storage_service
+    service = tmp_traj.storage_service
     complevel = service.complevel
     complib = service.complib
     shuffle = service.shuffle

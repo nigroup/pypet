@@ -45,8 +45,8 @@ from pypet.tests.testutils.data import create_param_dict, add_params, multiply,\
 
 def add_one_particular_item(traj, store_full):
     traj.hi = 42, 'hi!'
-    traj.f_store()
-    traj.f_remove_child('hi')
+    traj.store()
+    traj.remove_child('hi')
 
 
 class SlowResult(Result):
@@ -64,22 +64,22 @@ class FullStorageTest(TrajectoryComparator):
         with Environment(filename=filename,
                          log_config=get_log_config()) as env:
 
-            traj = env.v_trajectory
+            traj = env.trajectory
 
-            traj.v_lazy_adding = True
+            traj.lazy_adding = True
 
             traj.par.x = 3, 'jj'
 
-            traj.f_explore({'x': [1,2,3]})
+            traj.explore({'x': [1,2,3]})
 
-            env.f_run(add_one_particular_item, True)
+            env.run(add_one_particular_item, True)
 
             traj = load_trajectory(index=-1, filename=filename)
 
             self.assertTrue('hi' in traj)
 
 
-def test_niceness(traj):
+def with_niceness(traj):
     if traj.multiproc:
         if hasattr(os, 'nice'):
             trajnice = traj.niceness
@@ -94,14 +94,14 @@ def test_niceness(traj):
 
 def add_large_data(traj):
     np_array = np.random.rand(100,1000,10)
-    traj.f_add_result('l4rge', np_array)
-    traj.f_store_item('l4rge')
-    traj.f_remove_item('l4rge')
+    traj.add_result('l4rge', np_array)
+    traj.store_item('l4rge')
+    traj.remove_item('l4rge')
 
     array_list = []
     for irun in range(1000):
         array_list.append(np.random.rand(10))
-    traj.f_add_result('m4ny', *array_list)
+    traj.add_result('m4ny', *array_list)
 
 
 class SimpleEnvironmentTest(TrajectoryComparator):
@@ -112,8 +112,8 @@ class SimpleEnvironmentTest(TrajectoryComparator):
         filename = make_temp_dir('test.hdf5')
         head, tail = os.path.split(filename)
         env = Environment(filename=head)
-        the_file_name = env.v_traj.v_name + '.hdf5'
-        head, tail = os.path.split(env.v_traj.v_storage_service.filename)
+        the_file_name = env.traj.name + '.hdf5'
+        head, tail = os.path.split(env.traj.storage_service.filename)
         self.assertEqual(tail, the_file_name)
 
 
@@ -187,15 +187,15 @@ class EnvironmentTest(TrajectoryComparator):
                            'list' : [['fff'],[444444,444,44,4,4,4],[1,2,3,42]]}
 
         with self.assertRaises(pex.NotUniqueNodeError):
-            traj.f_explore(self.explore_dict)
-        traj.f_shrink(force=True)
+            traj.explore(self.explore_dict)
+        traj.shrink(force=True)
 
-        par_dict = traj.parameters.f_to_dict()
+        par_dict = traj.parameters.to_dict()
         for param_name in par_dict:
             param = par_dict[param_name]
-            if param.v_name in self.explore_dict:
-                param.f_unlock()
-                if param.v_explored:
+            if param.name in self.explore_dict:
+                param.unlock()
+                if param.explored:
                     param._shrink()
 
         self.explore_dict={'Numpy.string':[np.array(['Uno', 'Dos', 'Tres']),
@@ -208,7 +208,7 @@ class EnvironmentTest(TrajectoryComparator):
                            'dia_mat' : matrices_dia,
                            'list' : [['fff'],[444444,444,44,4,4,4],[1,2,3,42]]}
 
-        traj.f_explore(self.explore_dict)
+        traj.explore(self.explore_dict)
 
 
 
@@ -223,14 +223,14 @@ class EnvironmentTest(TrajectoryComparator):
         self.explored['csr_mat'][0] = self.explored['csr_mat'][0].tocsr()
         self.explored['csr_mat'][1] = self.explored['csr_mat'][0].tocsr()
 
-        traj.f_explore(cartesian_product(self.explored))
+        traj.explore(cartesian_product(self.explored))
 
     def explore_large(self, traj):
         self.explored ={'Normal.trial': [0,1]}
-        traj.f_explore(cartesian_product(self.explored))
+        traj.explore(cartesian_product(self.explored))
 
     def tearDown(self):
-        self.env.f_disable_logging()
+        self.env.disable_logging()
 
         super(EnvironmentTest, self).tearDown()
 
@@ -272,9 +272,9 @@ class EnvironmentTest(TrajectoryComparator):
                           port=self.port,
                           timeout=self.timeout)
 
-        traj = env.v_trajectory
+        traj = env.trajectory
 
-        traj.v_standard_parameter=Parameter
+        traj.standard_parameter=Parameter
 
         ## Create some parameters
         self.param_dict={}
@@ -291,12 +291,12 @@ class EnvironmentTest(TrajectoryComparator):
         ###Explore
         self.explore(self.traj)
 
-        self.env.f_run(test_niceness)
+        self.env.run(with_niceness)
 
-        self.assertTrue(self.traj.f_is_completed())
+        self.assertTrue(self.traj.is_completed())
 
     def test_file_overwriting(self):
-        self.traj.f_store()
+        self.traj.store()
 
         with ptcompat.open_file(self.filename, mode='r') as file:
             nchildren = len(file.root._v_children)
@@ -304,8 +304,8 @@ class EnvironmentTest(TrajectoryComparator):
 
         env2 = Environment(filename=self.filename,
                            log_config=get_log_config())
-        traj2 = env2.v_trajectory
-        traj2.f_store()
+        traj2 = env2.trajectory
+        traj2.store()
 
         self.assertTrue(os.path.exists(self.filename))
 
@@ -318,8 +318,8 @@ class EnvironmentTest(TrajectoryComparator):
 
         self.assertFalse(os.path.exists(self.filename))
 
-        env2.f_disable_logging()
-        env3.f_disable_logging()
+        env2.disable_logging()
+        env3.disable_logging()
 
     def test_time_display_of_loading(self):
         filename = make_temp_dir('sloooow.hdf5')
@@ -328,16 +328,16 @@ class EnvironmentTest(TrajectoryComparator):
                           log_config=get_log_config(),
                           dynamic_imports=SlowResult,
                           display_time=0.1)
-        traj = env.v_traj
-        res=traj.f_add_result(SlowResult, 'iii', 42, 43, comment='llk')
-        traj.f_store()
-        service_logger = traj.v_storage_service._logger
+        traj = env.traj
+        res=traj.add_result(SlowResult, 'iii', 42, 43, comment='llk')
+        traj.store()
+        service_logger = traj.storage_service._logger
         root = logging.getLogger('pypet')
         old_level = root.level
         service_logger.setLevel(logging.INFO)
         root.setLevel(logging.INFO)
 
-        traj.f_load(load_data=3)
+        traj.load(load_data=3)
         service_logger.setLevel(old_level)
         root.setLevel(old_level)
 
@@ -347,37 +347,37 @@ class EnvironmentTest(TrajectoryComparator):
             full_text = mainf.read()
             self.assertTrue('nodes/s)' in full_text)
 
-        env.f_disable_logging()
+        env.disable_logging()
 
     def make_run_large_data(self):
-        self.env.f_run(add_large_data)
+        self.env.run(add_large_data)
 
     def make_run(self):
 
         ### Make a test run
         simple_arg = -13
         simple_kwarg= 13.0
-        results =  self.env.f_run(simple_calculations,simple_arg,simple_kwarg=simple_kwarg)
+        results =  self.env.run(simple_calculations,simple_arg,simple_kwarg=simple_kwarg)
         self.are_results_in_order(results)
 
     def test_a_large_run(self):
         get_root_logger().info('Testing large run')
-        self.traj.f_add_parameter('TEST', 'test_run')
+        self.traj.add_parameter('TEST', 'test_run')
         ###Explore
         self.explore_large(self.traj)
         self.make_run_large_data()
 
-        self.assertTrue(self.traj.f_is_completed())
+        self.assertTrue(self.traj.is_completed())
 
         # Check if printing and repr work
         get_root_logger().info(str(self.env))
         get_root_logger().info(repr(self.env))
 
         newtraj = Trajectory()
-        newtraj.f_load(name=self.traj.v_name, as_new=False, load_data=2, filename=self.filename)
+        newtraj.load(name=self.traj.name, as_new=False, load_data=2, filename=self.filename)
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj,newtraj)
 
@@ -387,16 +387,16 @@ class EnvironmentTest(TrajectoryComparator):
         self.assertTrue(size_in_mb < 30.0, 'Size is %sMB > 30MB' % str(size_in_mb))
 
     def test_two_runs(self):
-        self.traj.f_add_parameter('TEST', 'test_run')
+        self.traj.add_parameter('TEST', 'test_run')
         self.traj.hdf5.purge_duplicate_comments = False
         ###Explore
         self.explore(self.traj)
 
         self.make_run()
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj, newtraj)
 
@@ -413,7 +413,7 @@ class EnvironmentTest(TrajectoryComparator):
         ### Make a new single core run
         self.setUp()
 
-        self.traj.f_add_parameter('TEST', 'test_run')
+        self.traj.add_parameter('TEST', 'test_run')
         self.traj.hdf5.purge_duplicate_comments = False
         ###Explore
         self.explore(self.traj)
@@ -421,8 +421,8 @@ class EnvironmentTest(TrajectoryComparator):
         self.make_run()
 
         # newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj, newtraj)
 
@@ -437,42 +437,42 @@ class EnvironmentTest(TrajectoryComparator):
     def test_errors(self):
         tmp = make_temp_dir('cont')
         if dill is not None:
-            env1 = Environment(continuable=True, continue_folder=tmp,
+            env1 = Environment(resumable=True, resume_folder=tmp,
                            log_config=None, filename=self.filename)
             with self.assertRaises(ValueError):
-                env1.f_run_map(multiply_args, [1], [2], [3])
+                env1.run_map(multiply_args, [1], [2], [3])
         with self.assertRaises(ValueError):
             Environment(multiproc=True, use_pool=False, freeze_input=True,
                            filename=self.filename, log_config=None)
         env3 = Environment(log_config=None, filename=self.filename)
         with self.assertRaises(ValueError):
-            env3.f_run_map(multiply_args)
+            env3.run_map(multiply_args)
         with self.assertRaises(ValueError):
             Environment(use_scoop=True, immediate_postproc=True)
         with self.assertRaises(ValueError):
             Environment(use_pool=True, immediate_postproc=True)
         with self.assertRaises(ValueError):
-            Environment(continuable=True, wrap_mode='QUEUE', continue_folder=tmp)
+            Environment(resumable=True, wrap_mode='QUEUE', resume_folder=tmp)
         with self.assertRaises(ValueError):
             Environment(use_scoop=True, wrap_mode='QUEUE')
         with self.assertRaises(ValueError):
             Environment(automatic_storing=False,
-                        continuable=True, continue_folder=tmp)
+                        resumable=True, resume_folder=tmp)
         with self.assertRaises(ValueError):
             Environment(port='www.nosi.de', wrap_mode='LOCK')
 
     def test_run(self):
-        self.traj.f_add_parameter('TEST', 'test_run')
+        self.traj.add_parameter('TEST', 'test_run')
         ###Explore
         self.explore(self.traj)
 
         self.make_run()
 
-        self.assertTrue(self.traj.f_is_completed())
+        self.assertTrue(self.traj.is_completed())
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj, newtraj)
 
@@ -483,11 +483,11 @@ class EnvironmentTest(TrajectoryComparator):
 
     def test_just_one_run(self):
         self.make_run()
-        self.assertTrue(self.traj.f_is_completed())
+        self.assertTrue(self.traj.is_completed())
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj, newtraj)
 
@@ -502,25 +502,25 @@ class EnvironmentTest(TrajectoryComparator):
             self.explore(self.traj)
 
     def test_run_complex(self):
-        self.traj.f_add_parameter('TEST', 'test_run_complex')
+        self.traj.add_parameter('TEST', 'test_run_complex')
         ###Explore
         self.explore_complex_params(self.traj)
 
         self.make_run()
 
-        self.assertTrue(self.traj.f_is_completed())
+        self.assertTrue(self.traj.is_completed())
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_update_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.update_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj, newtraj)
 
     def load_trajectory(self,trajectory_index=None,trajectory_name=None,as_new=False):
         ### Load The Trajectory and check if the values are still the same
         newtraj = Trajectory()
-        newtraj.v_storage_service=HDF5StorageService(filename=self.filename)
-        newtraj.f_load(name=trajectory_name, index=trajectory_index, as_new=as_new,
+        newtraj.storage_service=HDF5StorageService(filename=self.filename)
+        newtraj.load(name=trajectory_name, index=trajectory_index, as_new=as_new,
                        load_parameters=2, load_derived_parameters=2, load_results=2,
                        load_other_data=2)
         return newtraj
@@ -529,7 +529,7 @@ class EnvironmentTest(TrajectoryComparator):
     def test_expand(self):
 
         ###Explore
-        self.traj.f_add_parameter('TEST', 'test_expand')
+        self.traj.add_parameter('TEST', 'test_expand')
         self.explore(self.traj)
 
         self.make_run()
@@ -539,41 +539,41 @@ class EnvironmentTest(TrajectoryComparator):
         get_root_logger().info('\n $$$$$$$$$$$$$$$$$ Second Run $$$$$$$$$$$$$$$$$$$$$$$$')
         self.make_run()
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj, newtraj)
 
     def test_expand_after_reload(self):
 
-        self.traj.f_add_parameter('TEST', 'test_expand_after_reload')
+        self.traj.add_parameter('TEST', 'test_expand_after_reload')
         ###Explore
         self.explore(self.traj)
 
         self.make_run()
 
-        traj_name = self.traj.v_name
+        traj_name = self.traj.name
 
 
         self.env = Environment(trajectory=self.traj,
                           log_stdout=False,
                           log_config=get_log_config())
 
-        self.traj = self.env.v_trajectory
+        self.traj = self.env.trajectory
 
-        self.traj.f_load(name=traj_name)
-        self.traj.res.f_remove()
-        self.traj.dpar.f_remove()
+        self.traj.load(name=traj_name)
+        self.traj.res.remove()
+        self.traj.dpar.remove()
 
         self.expand()
 
         get_root_logger().info('\n $$$$$$$$$$$$ Second Run $$$$$$$$$$ \n')
         self.make_run()
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj, newtraj)
 
@@ -588,42 +588,42 @@ class EnvironmentTest(TrajectoryComparator):
         self.expanded['csr_mat'][0]=self.expanded['csr_mat'][0].tocsr()
         self.expanded['csr_mat'][1]=self.expanded['csr_mat'][1].tocsr()
 
-        self.traj.f_expand(cartesian_product(self.expanded))
-        self.traj.f_store()
+        self.traj.expand(cartesian_product(self.expanded))
+        self.traj.store()
 
 
     ################## Overview TESTS #############################
 
     def test_switch_ON_large_tables(self):
-        self.traj.f_add_parameter('TEST', 'test_switch_ON_LARGE_tables')
+        self.traj.add_parameter('TEST', 'test_switch_ON_LARGE_tables')
         ###Explore
         self.explore(self.traj)
 
-        self.env.f_set_large_overview(True)
+        self.env.set_large_overview(True)
         self.make_run()
 
         hdf5file = pt.openFile(self.filename)
-        overview_group = hdf5file.getNode(where='/'+ self.traj.v_name, name='overview')
+        overview_group = hdf5file.getNode(where='/'+ self.traj.name, name='overview')
         should = ['derived_parameters_overview', 'results_overview']
         for name in should:
             self.assertTrue(name in overview_group, '%s not in overviews but it should!' % name)
         hdf5file.close()
 
-        self.traj.f_load(load_parameters=2, load_derived_parameters=2, load_results=2)
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name)
+        self.traj.load(load_parameters=2, load_derived_parameters=2, load_results=2)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name)
 
         self.compare_trajectories(newtraj,self.traj)
 
     def test_switch_off_all_tables(self):
         ###Explore
-        self.traj.f_add_parameter('TEST', 'test_switch_off_ALL_tables')
+        self.traj.add_parameter('TEST', 'test_switch_off_ALL_tables')
         self.explore(self.traj)
 
-        self.env.f_switch_off_all_overview()
+        self.env.switch_off_all_overview()
         self.make_run()
 
         hdf5file = pt.openFile(self.filename)
-        overview_group = hdf5file.getNode(where='/'+ self.traj.v_name, name='overview')
+        overview_group = hdf5file.getNode(where='/'+ self.traj.name, name='overview')
         should_not = HDF5StorageService.NAME_TABLE_MAPPING.keys()
         for name in should_not:
             name = name.split('.')[-1] # Get only the name of the table, no the full name
@@ -633,58 +633,58 @@ class EnvironmentTest(TrajectoryComparator):
 
 
     def test_store_form_tuple(self):
-        self.traj.f_store()
+        self.traj.store()
 
-        self.traj.f_add_result('TestResItem', 42, 43)
+        self.traj.add_result('TestResItem', 42, 43)
 
         with self.assertRaises(ValueError):
-             self.traj.f_store_item((pypetconstants.LEAF, self.traj.TestResItem,(),{},5))
+             self.traj.store_item((pypetconstants.LEAF, self.traj.TestResItem,(),{},5))
 
-        self.traj.f_store_item((pypetconstants.LEAF, self.traj.TestResItem))
+        self.traj.store_item((pypetconstants.LEAF, self.traj.TestResItem))
 
-        self.traj.results.f_remove_child('TestResItem')
+        self.traj.results.remove_child('TestResItem')
 
         self.assertTrue('TestResItem' not in self.traj)
 
-        self.traj.results.f_load_child('TestResItem', load_data=pypetconstants.LOAD_SKELETON)
+        self.traj.results.load_child('TestResItem', load_data=pypetconstants.LOAD_SKELETON)
 
-        self.traj.f_load_item((pypetconstants.LEAF,self.traj.TestResItem,(),{'load_only': 'TestResItem'}))
+        self.traj.load_item((pypetconstants.LEAF,self.traj.TestResItem,(),{'load_only': 'TestResItem'}))
 
         self.assertTrue(self.traj.TestResItem, 42)
 
     def test_store_single_group(self):
-        self.traj.f_store()
+        self.traj.store()
 
-        self.traj.f_add_parameter_group('new.test.group').v_annotations.f_set(42)
+        self.traj.add_parameter_group('new.test.group').annotations.set(42)
 
-        self.traj.f_store_item('new.group')
+        self.traj.store_item('new.group')
 
-
-        # group is below test not new, so ValueError thrown:
-        with self.assertRaises(ValueError):
-            self.traj.parameters.new.f_remove_child('group')
 
         # group is below test not new, so ValueError thrown:
         with self.assertRaises(ValueError):
-            self.traj.parameters.new.f_store_child('group')
+            self.traj.parameters.new.remove_child('group')
+
+        # group is below test not new, so ValueError thrown:
+        with self.assertRaises(ValueError):
+            self.traj.parameters.new.store_child('group')
 
         # group has children and recursive is false
         with self.assertRaises(TypeError):
-            self.traj.parameters.new.f_remove_child('test')
+            self.traj.parameters.new.remove_child('test')
 
 
-        self.traj.new.f_remove_child('test', recursive=True)
+        self.traj.new.remove_child('test', recursive=True)
 
         self.assertTrue('new.group' not in self.traj)
 
-        self.traj.new.f_load_child('test', recursive=True, load_data=pypetconstants.LOAD_SKELETON)
+        self.traj.new.load_child('test', recursive=True, load_data=pypetconstants.LOAD_SKELETON)
 
-        self.assertTrue(self.traj.new.group.v_annotations.annotation, 42)
+        self.assertTrue(self.traj.new.group.annotations.annotation, 42)
 
-        self.traj.f_delete_item('new.test.group')
+        self.traj.delete_item('new.test.group')
 
         with self.assertRaises(pex.DataNotInStorageError):
-            self.traj.parameters.f_load_child('new.test.group',
+            self.traj.parameters.load_child('new.test.group',
                                               load_data=pypetconstants.LOAD_SKELETON)
 
     def test_switch_on_all_comments(self):
@@ -694,7 +694,7 @@ class EnvironmentTest(TrajectoryComparator):
         self.make_run()
 
         hdf5file = pt.openFile(self.filename)
-        traj_group = hdf5file.getNode(where='/', name= self.traj.v_name)
+        traj_group = hdf5file.getNode(where='/', name= self.traj.name)
 
         for node in traj_group._f_walkGroups():
             if 'SRVC_LEAF' in node._v_attrs:
@@ -712,9 +712,9 @@ class EnvironmentTest(TrajectoryComparator):
             self.traj.overview.results_summary = 0
             self.make_run()
 
-        self.traj.f_get('purge_duplicate_comments').f_unlock()
+        self.traj.get('purge_duplicate_comments').unlock()
         self.traj.hdf5.purge_duplicate_comments=1
-        self.traj.f_get('results_summary').f_unlock()
+        self.traj.get('results_summary').unlock()
         self.traj.overview.results_summary=1
         self.make_run()
 
@@ -724,7 +724,7 @@ class EnvironmentTest(TrajectoryComparator):
         ncomments = {}
 
         try:
-            traj_group = hdf5file.getNode(where='/',name= self.traj.v_name)
+            traj_group = hdf5file.getNode(where='/',name= self.traj.name)
 
 
             for node in traj_group._f_walkGroups():
@@ -744,9 +744,9 @@ class EnvironmentTest(TrajectoryComparator):
 
     def test_NOT_purge_duplicate_comments(self):
         self.explore(self.traj)
-        self.traj.f_get('purge_duplicate_comments').f_unlock()
+        self.traj.get('purge_duplicate_comments').unlock()
         self.traj.hdf5.purge_duplicate_comments=0
-        self.traj.f_get('results_summary').f_unlock()
+        self.traj.get('results_summary').unlock()
         self.traj.overview.results_summary=0
         self.make_run()
 
@@ -756,7 +756,7 @@ class EnvironmentTest(TrajectoryComparator):
         ncomments = {}
 
         try:
-            traj_group = hdf5file.getNode(where='/',name= self.traj.v_name)
+            traj_group = hdf5file.getNode(where='/',name= self.traj.name)
 
 
             for node in traj_group._f_walkGroups():
@@ -839,7 +839,7 @@ class ResultSortTest(TrajectoryComparator):
         self.port = None
 
     def tearDown(self):
-        self.env.f_disable_logging()
+        self.env.disable_logging()
         super(ResultSortTest, self).tearDown()
 
     def setUp(self):
@@ -861,13 +861,13 @@ class ResultSortTest(TrajectoryComparator):
                           port=self.port,
                           freeze_input=self.freeze_input,)
 
-        traj = env.v_trajectory
+        traj = env.trajectory
 
 
-        traj.v_standard_parameter=Parameter
+        traj.standard_parameter=Parameter
 
-        traj.f_add_parameter('x',0)
-        traj.f_add_parameter('y',0)
+        traj.add_parameter('x',0)
+        traj.add_parameter('y',0)
 
         self.env=env
         self.traj=traj
@@ -875,45 +875,45 @@ class ResultSortTest(TrajectoryComparator):
     def load_trajectory(self,trajectory_index=None,trajectory_name=None,as_new=False):
         ### Load The Trajectory and check if the values are still the same
         newtraj = Trajectory()
-        newtraj.v_storage_service=HDF5StorageService(filename=self.filename)
-        newtraj.f_load(name=trajectory_name, index=trajectory_index, as_new=as_new,
+        newtraj.storage_service=HDF5StorageService(filename=self.filename)
+        newtraj.load(name=trajectory_name, index=trajectory_index, as_new=as_new,
                        load_derived_parameters=2, load_results=2)
         return newtraj
 
 
     def explore(self,traj):
         self.explore_dict={'x':[0,1,2,3,4],'y':[1,1,2,2,3]}
-        traj.f_explore(self.explore_dict)
+        traj.explore(self.explore_dict)
 
 
     def expand(self,traj):
         self.expand_dict={'x':[10,11,12,13],'y':[11,11,12,12,13]}
         with self.assertRaises(ValueError):
-            traj.f_expand(self.expand_dict)
+            traj.expand(self.expand_dict)
 
         self.expand_dict={'x':[10,11,12,13],'y':[11,11,12,12]}
-        traj.f_expand(self.expand_dict)
+        traj.expand(self.expand_dict)
 
     def test_if_results_are_sorted_correctly_manual_runs(self):
         ###Explore
         self.explore(self.traj)
-        self.traj.f_store(only_init=True)
+        self.traj.store(only_init=True)
         man_multiply = manual_run()(multiply_with_storing)
-        for idx in self.traj.f_iter_runs(yields='idx'):
+        for idx in self.traj.iter_runs(yields='idx'):
             self.assertTrue(isinstance(idx, int))
             man_multiply(self.traj)
         traj = self.traj
-        traj.f_store()
+        traj.store()
         self.assertTrue(len(traj), 5)
         self.assertTrue(len(traj) == len(compat.listvalues(self.explore_dict)[0]))
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct(traj)
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj,newtraj)
 
@@ -925,14 +925,14 @@ class ResultSortTest(TrajectoryComparator):
         args2=[100*x for x in range(len(self.traj))]
         args3=list(range(len(self.traj)))
 
-        results = self.env.f_run_map(multiply_args, args1, arg2=args2, arg3=args3)
+        results = self.env.run_map(multiply_args, args1, arg2=args2, arg3=args3)
         self.assertEqual(len(results), len(self.traj))
 
         traj = self.traj
         self.assertTrue(len(traj) == len(compat.listvalues(self.explore_dict)[0]))
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct_map(traj, args1, args2, args3)
 
         for res in results:
@@ -942,9 +942,9 @@ class ResultSortTest(TrajectoryComparator):
             idx = res[0]
             self.assertEqual(self.traj.res.runs[idx].z, res[1])
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.assertEqual(len(traj), 5)
         self.compare_trajectories(self.traj,newtraj)
@@ -954,7 +954,7 @@ class ResultSortTest(TrajectoryComparator):
         ###Explore
         self.explore(self.traj)
 
-        results = self.env.f_run(multiply)
+        results = self.env.run(multiply)
         self.are_results_in_order(results)
         self.assertEqual(len(results), len(self.traj))
 
@@ -962,8 +962,8 @@ class ResultSortTest(TrajectoryComparator):
         traj = self.traj
         self.assertTrue(len(traj) == len(compat.listvalues(self.explore_dict)[0]))
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct(traj)
 
         for res in results:
@@ -973,9 +973,9 @@ class ResultSortTest(TrajectoryComparator):
             idx = res[0]
             self.assertEqual(self.traj.res.runs[idx].z, res[1])
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj,newtraj)
 
@@ -985,64 +985,64 @@ class ResultSortTest(TrajectoryComparator):
         self.explore(self.traj)
 
 
-        results = self.env.f_run(multiply)
+        results = self.env.run(multiply)
         self.are_results_in_order(results)
         traj = self.traj
         self.assertTrue(len(traj) == len(compat.listvalues(self.explore_dict)[0]))
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct(traj)
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
-        for idx, run_name in enumerate(self.traj.f_iter_runs()):
-            newtraj.v_as_run=run_name
-            self.traj.v_as_run == run_name
-            self.traj.v_idx = idx
-            newtraj.v_idx = idx
-            nameset = set((x.v_name for x in traj.f_iter_nodes(predicate=(idx,))))
+        for idx, run_name in enumerate(self.traj.iter_runs()):
+            newtraj.crun_name =run_name
+            self.traj.f_set_crun(run_name)
+            self.traj.idx = idx
+            newtraj.idx = idx
+            nameset = set((x.name for x in traj.iter_nodes(predicate=(idx,))))
             self.assertTrue('run_%08d' % (idx+1) not in nameset)
             self.assertTrue('run_%08d' % idx in nameset)
-            self.assertTrue(traj.v_crun == run_name)
+            self.assertTrue(traj.v_crun_name == run_name)
             self.assertTrue(newtraj.crun.z==traj.x*traj.y,' z != x*y: %s != %s * %s' %
                                                   (str(newtraj.crun.z),str(traj.x),str(traj.y)))
 
-        for idx, traj in enumerate(self.traj.f_iter_runs(yields='self')):
-            run_name = traj.f_idx_to_run(idx)
+        for idx, traj in enumerate(self.traj.iter_runs(yields='self')):
+            run_name = traj.idx_to_run(idx)
             self.assertTrue(traj is self.traj)
-            newtraj.v_as_run=run_name
-            self.traj.v_as_run == run_name
-            self.traj.v_idx = idx
-            newtraj.v_idx = idx
-            nameset = set((x.v_name for x in traj.f_iter_nodes(predicate=(idx,))))
+            newtraj.v_crun_name =run_name
+            self.traj.f_set_crun(run_name)
+            self.traj.idx = idx
+            newtraj.idx = idx
+            nameset = set((x.name for x in traj.iter_nodes(predicate=(idx,))))
             self.assertTrue('run_%08d' % (idx+1) not in nameset)
             self.assertTrue('run_%08d' % idx in nameset)
-            self.assertTrue(traj.v_crun == run_name)
+            self.assertTrue(traj.crun_name == run_name)
             self.assertTrue(newtraj.crun.z==traj.x*traj.y,' z != x*y: %s != %s * %s' %
                                                   (str(newtraj.crun.z),str(traj.x),str(traj.y)))
 
-        for idx, traj in enumerate(self.traj.f_iter_runs(yields='copy')):
-            run_name = traj.f_idx_to_run(idx)
+        for idx, traj in enumerate(self.traj.iter_runs(yields='copy')):
+            run_name = traj.idx_to_run(idx)
             self.assertTrue(traj is not self.traj)
-            newtraj.v_as_run=run_name
-            self.traj.v_as_run == run_name
-            self.traj.v_idx = idx
-            newtraj.v_idx = idx
-            nameset = set((x.v_name for x in traj.f_iter_nodes(predicate=(idx,))))
+            newtraj.as_run=run_name
+            self.traj.as_run == run_name
+            self.traj.idx = idx
+            newtraj.idx = idx
+            nameset = set((x.name for x in traj.iter_nodes(predicate=(idx,))))
             self.assertTrue('run_%08d' % (idx+1) not in nameset)
             self.assertTrue('run_%08d' % idx in nameset)
-            self.assertTrue(traj.v_crun == run_name)
+            self.assertTrue(traj.crun_name == run_name)
             self.assertTrue(newtraj.crun.z==traj.x*traj.y,' z != x*y: %s != %s * %s' %
                                                   (str(newtraj.crun.z),str(traj.x),str(traj.y)))
 
         traj = self.traj
-        self.assertTrue(traj.v_idx == -1)
-        self.assertTrue(traj.v_crun is None)
-        self.assertTrue(traj.v_crun_ == pypetconstants.RUN_NAME_DUMMY)
-        self.assertTrue(newtraj.v_idx == idx)
+        self.assertTrue(traj.idx == -1)
+        self.assertTrue(traj.crun_name is None)
+        self.assertTrue(traj.crun_name_ == pypetconstants.RUN_NAME_DUMMY)
+        self.assertTrue(newtraj.idx == idx)
 
 
 
@@ -1050,43 +1050,43 @@ class ResultSortTest(TrajectoryComparator):
         ###Explore
         self.explore(self.traj)
 
-        results = self.env.f_run(multiply)
+        results = self.env.run(multiply)
         self.are_results_in_order(results)
 
         get_root_logger().info(results)
         traj = self.traj
         self.assertEqual(len(traj), len(list(compat.listvalues(self.explore_dict)[0])))
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct(traj)
 
-        traj_name = self.env.v_trajectory.v_name
+        traj_name = self.env.trajectory.name
         del self.env
         self.env = Environment(trajectory=self.traj,
                           log_stdout=False,
                           log_config=get_log_config())
 
-        self.traj = self.env.v_trajectory
+        self.traj = self.env.trajectory
 
-        self.traj.f_load(name=traj_name)
+        self.traj.load(name=traj_name)
 
         self.expand(self.traj)
 
-        results = self.env.f_run(multiply)
+        results = self.env.run(multiply)
         self.are_results_in_order(results)
 
         traj = self.traj
         self.assertTrue(len(traj) == len(compat.listvalues(self.expand_dict)[0])+ len(compat.listvalues(self.explore_dict)[0]))
 
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct(traj)
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj,newtraj)
 
@@ -1094,55 +1094,55 @@ class ResultSortTest(TrajectoryComparator):
         ###Explore
         self.explore(self.traj)
 
-        results = self.env.f_run(multiply)
+        results = self.env.run(multiply)
         self.are_results_in_order(results)
 
         traj = self.traj
         self.assertTrue(len(traj) == len(compat.listvalues(self.explore_dict)[0]))
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct(traj)
 
         self.expand(self.traj)
 
-        self.env.f_run(multiply)
+        self.env.run(multiply)
         traj = self.traj
         self.assertTrue(len(traj) == len(compat.listvalues(self.expand_dict)[0])+\
                         len(compat.listvalues(self.explore_dict)[0]))
 
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
         self.check_if_z_is_correct(traj)
 
-        newtraj = self.load_trajectory(trajectory_name=self.traj.v_name,as_new=False)
-        self.traj.f_load_skeleton()
-        self.traj.f_load_items(self.traj.f_to_dict().keys(), only_empties=True)
+        newtraj = self.load_trajectory(trajectory_name=self.traj.name,as_new=False)
+        self.traj.load_skeleton()
+        self.traj.load_items(self.traj.to_dict().keys(), only_empties=True)
 
         self.compare_trajectories(self.traj,newtraj)
 
     def check_if_z_is_correct_map(self,traj, args1, args2, args3):
         for x, arg1, arg2, arg3 in zip(range(len(traj)), args1, args2, args3):
-            traj.v_idx=x
+            traj.idx=x
             self.assertTrue(traj.crun.z==traj.x*traj.y+arg1+arg2+arg3,' z != x*y: %s != %s * %s' %
                                                   (str(traj.crun.z),str(traj.x),str(traj.y)))
-        traj.v_idx=-1
+        traj.idx=-1
 
     def check_if_z_is_correct(self,traj):
-        traj.v_shortcuts=False
+        traj.shortcuts=False
         for x in range(len(traj)):
-            traj.v_idx=x
+            traj.idx=x
             z = traj.res.runs.crun.z
             x = traj.par.x
             y = traj.par.y
             self.assertTrue(z==x*y,' z != x*y: %s != %s * %s' %
                                                   (str(z),str(x),str(y)))
-        traj.v_idx=-1
-        traj.v_shortcuts=True
+        traj.idx=-1
+        traj.shortcuts=True
 
 
 # def test_runfunc(traj, list_that_changes):
-#     traj.f_add_result('kkk', list_that_changes[traj.v_idx] + traj.v_idx)
+#     traj.add_result('kkk', list_that_changes[traj.v_idx] + traj.v_idx)
 #     list_that_changes[traj.v_idx] = 1000
 
 # class DeepCopyTest(TrajectoryComparator):
@@ -1161,12 +1161,12 @@ class ResultSortTest(TrajectoryComparator):
 #
 #         traj = env.v_trajectory
 #
-#         traj.f_add_parameter('dummy', 1)
-#         traj.f_explore({'dummy':[12, 3, 3, 4]})
+#         traj.add_parameter('dummy', 1)
+#         traj.explore({'dummy':[12, 3, 3, 4]})
 #
 #         list_that_should_not_change = [42, 42, 42, 42]
 #
-#         env.f_run(test_runfunc, list_that_should_not_change)
+#         env.run(test_runfunc, list_that_should_not_change)
 #
 #         traj.v_auto_load=True
 #
@@ -1188,12 +1188,12 @@ class ResultSortTest(TrajectoryComparator):
 #
 #         traj = env.v_trajectory
 #
-#         traj.f_add_parameter('dummy', 1)
-#         traj.f_explore({'dummy':[12, 3, 3, 4]})
+#         traj.add_parameter('dummy', 1)
+#         traj.explore({'dummy':[12, 3, 3, 4]})
 #
 #         list_that_should_change = [42, 42, 42, 42]
 #
-#         env.f_run(test_runfunc, list_that_should_change)
+#         env.run(test_runfunc, list_that_should_change)
 #
 #         traj.v_auto_load=True
 #

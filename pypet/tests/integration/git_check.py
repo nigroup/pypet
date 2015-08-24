@@ -19,7 +19,7 @@ import pypet.compat as compat
 
 def multiply(traj):
     z=traj.x*traj.y
-    traj.f_add_result('z',z, comment='Im the product of two reals!')
+    traj.add_result('z',z, comment='Im the product of two reals!')
 
 
 def get_opt():
@@ -73,17 +73,17 @@ def main(fail=False):
                           sumatra_project=sumatra_project, sumatra_reason='Testing!') as env:
 
             # Get the trajectory from the environment
-            traj = env.v_trajectory
+            traj = env.trajectory
 
             # Add both parameters
-            traj.f_add_parameter('x', 1, comment='Im the first dimension!')
-            traj.f_add_parameter('y', 1, comment='Im the second dimension!')
+            traj.add_parameter('x', 1, comment='Im the first dimension!')
+            traj.add_parameter('y', 1, comment='Im the second dimension!')
 
             # Explore the parameters with a cartesian product:
-            traj.f_explore(cartesian_product({'x':[1,2,3], 'y':[6,7,8]}))
+            traj.explore(cartesian_product({'x':[1,2,3], 'y':[6,7,8]}))
 
             # Run the simulation
-            env.f_run(multiply)
+            env.run(multiply)
 
             # Check that git information was added to the trajectory
             assert 'config.git.hexsha' in traj

@@ -26,12 +26,12 @@ class StorageContextManager(HasLogger):
         self._traj = trajectory
 
     def __enter__(self):
-        self.f_open_store()
+        self.open_store()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
-            self.f_close_store()
+            self.close_store()
         except Exception as exc:
             self._logger.error('Could not close file because of `%s`' % repr(exc))
             if exc_type is None:
@@ -39,22 +39,22 @@ class StorageContextManager(HasLogger):
             else:
                 return False
 
-    def f_close_store(self):
-        service = self._traj.v_storage_service
+    def close_store(self):
+        service = self._traj.storage_service
         if not service.is_open:
             raise RuntimeError('The storage service is not open, '
                                'please open via `f_open_storage`.')
         service.store(pypetconstants.CLOSE_FILE, None)
 
-    def f_open_store(self):
-        service = self._traj.v_storage_service
+    def open_store(self):
+        service = self._traj.storage_service
         if service.is_open:
             raise RuntimeError('Your service is already open, there is no need to re-open it.')
         service.store(pypetconstants.OPEN_FILE, None,
-                      trajectory_name=self._traj.v_name)
+                      trajectory_name=self._traj.name)
 
-    def f_flush_store(self):
-        service = self._traj.v_storage_service
+    def flush_store(self):
+        service = self._traj.storage_service
         if not service.is_open:
             raise RuntimeError('The storage service is not open, '
                                'please open via `f_open_storage`.')
@@ -67,13 +67,13 @@ def make_ordinary_result(result, key, trajectory=None, reload=True):
     :return: The `result`
 
     """
-    shared_data = result.f_get(key)
+    shared_data = result.get(key)
     if trajectory is not None:
         shared_data.traj = trajectory
     shared_data._request_data('make_ordinary')
-    result.f_remove(key)
+    result.remove(key)
     if reload:
-        trajectory.f_load_item(result, load_data=pypetconstants.OVERWRITE_DATA)
+        trajectory.load_item(result, load_data=pypetconstants.OVERWRITE_DATA)
     return result
 
 
@@ -86,7 +86,7 @@ def make_shared_result(result, key, trajectory, new_class=None):
     :return: The `result`
 
     """
-    data = result.f_get(key)
+    data = result.get(key)
     if new_class is None:
         if isinstance(data, ObjectTable):
             new_class = SharedTable
@@ -98,7 +98,7 @@ def make_shared_result(result, key, trajectory, new_class=None):
             new_class = SharedCArray
         else:
             raise RuntimeError('Your data `%s` is not understood.' % key)
-    shared_data = new_class(result.f_translate_key(key), result, trajectory=trajectory)
+    shared_data = new_class(result.translate_key(key), result, trajectory=trajectory)
     shared_data._request_data('make_shared')
     result[key] = shared_data
     return result
@@ -132,7 +132,7 @@ class SharedData(HasLogger):
     def _store_parent(self):
         self._check_state()
         if not self.parent._stored:
-            self.traj.f_store_item(self.parent)
+            self.traj.store_item(self.parent)
 
     def create_shared_data(self, **kwargs):
         if 'flag' not in kwargs:
@@ -152,10 +152,10 @@ class SharedData(HasLogger):
         return self._request_data('create_shared_data', kwargs=kwargs)
 
     def _request_data(self, request, args=None, kwargs=None):
-        return self._storage_service.store(pypetconstants.ACCESS_DATA, self.parent.v_full_name,
+        return self._storage_service.store(pypetconstants.ACCESS_DATA, self.parent.full_name,
                                            self.name,
                                            request, args, kwargs,
-                                           trajectory_name=self.traj.v_name)
+                                           trajectory_name=self.traj.name)
 
     def get_data_node(self):
         if not self._storage_service.is_open:
@@ -166,7 +166,7 @@ class SharedData(HasLogger):
     @property
     def _storage_service(self):
         self._store_parent()
-        return self.traj.v_storage_service
+        return self.traj.storage_service
 
 
 class SharedArray(SharedData):
@@ -520,8 +520,8 @@ class SharedResult(Result, KnowsTrajectory):
         except AttributeError:
             pass
 
-    def f_set_single(self, name, item):
-        super(SharedResult, self).f_set_single(name, item)
+    def set_single(self, name, item):
+        super(SharedResult, self).set_single(name, item)
         self._pass_to_shared(name, item)
 
     def _load(self, load_dict):
@@ -532,7 +532,7 @@ class SharedResult(Result, KnowsTrajectory):
 
     def create_shared_data(self, name=None, **kwargs):
         if name is None:
-            item = self.f_get()
+            item = self.get()
         else:
-            item = self.f_get(name)
+            item = self.get(name)
         return item.create_shared_data(**kwargs)
