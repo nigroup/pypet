@@ -363,7 +363,7 @@ class StorageDataTrajectoryTests(TrajectoryComparator):
                                  comment='carray').create_shared_data(shape=(10, 10), atom=pt.atom.FloatAtom())
         traj.arrays.add_result(SharedResult, 'earray', SharedEArray()).create_shared_data('earray',
                                                                                             obj=npearray)
-
+        self.assertEqual(traj.array.name, traj.array.v_name)
 
         traj.store()
 

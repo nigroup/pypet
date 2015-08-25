@@ -568,10 +568,14 @@ class NamingSchemeTest(unittest.TestCase):
     def test_v_property(self):
         cp = MyCustomLeaf('test')
         self.assertEqual(cp.my_property, cp.v_my_property)
+        with self.assertRaises(AttributeError):
+            cp.v_my_other
 
     def test_v_property_slots(self):
         cp = MyCustomNaming()
         self.assertEqual(cp.my_property, cp.v_my_property)
+        with self.assertRaises(AttributeError):
+            cp.v_my_other
 
 
 if __name__ == '__main__':

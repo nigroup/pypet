@@ -106,41 +106,17 @@ def make_shared_result(result, key, trajectory, new_class=None):
 
 class SharedData(PypetNaming):
 
-    __slots__ = ('_name', '_parent', '_traj')
+    __slots__ = ('name', 'parent', 'traj')
 
     FLAG = None
 
     def __init__(self, name=None, parent=None, trajectory=None, add_to_parent=False):
         self._set_logger()
-        self._name = name
-        self._parent = parent
-        self._traj = trajectory
+        self.name = name
+        self.parent = parent
+        self.traj = trajectory
         if add_to_parent:
             self.parent[name] = self
-
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, name):
-        self._name = name
-
-    @property
-    def parent(self):
-        return self._parent
-
-    @parent.setter
-    def parent(self, parent):
-        self._parent = parent
-
-    @property
-    def traj(self):
-        return self._traj
-
-    @traj.setter
-    def traj(self, traj):
-        self._traj = traj
 
     def _check_state(self):
         if self.traj is None:
