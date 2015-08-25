@@ -2494,7 +2494,7 @@ class Trajectory(DerivedParameterGroup, ResultGroup, ParameterGroup, ConfigGroup
         if 'config.merging' in other_trajectory:
 
             self._logger.info('Merging merge config!')
-            merge_node = other_trajectory.get('config.merge')
+            merge_node = other_trajectory.get('config.merging')
             param_list = []
             for param in merge_node.iter_leaves(with_links=False):
                 if not self.contains(param.full_name, shortcuts=False):
