@@ -1114,7 +1114,7 @@ class StorageTest(TrajectoryComparator):
         traj2.load(load_parameters=2, load_results=2)
 
         traj.add_result('Im.stored.along.a.path', 43)
-        traj.Im.stored.along.annotations['wtf'] =4444
+        traj.Im['stored'].along.annotations['wtf'] =4444
         traj.res.store_child('Im.stored.along.a.path')
 
 
