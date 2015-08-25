@@ -790,7 +790,7 @@ class Parameter(BaseParameter):
         """
         self._data = self._default
 
-    @copydoc(BaseParameter.is_empty)
+    @copydoc(BaseParameter.f_is_empty)
     def is_empty(self):
         """True if no data has been assigned to the parameter.
 
@@ -963,7 +963,7 @@ class Parameter(BaseParameter):
 
         return True
 
-    @copydoc(BaseParameter.set)
+    @copydoc(BaseParameter.f_set)
     def set(self, data):
 
         if self.locked:
@@ -987,7 +987,7 @@ class Parameter(BaseParameter):
         self._data = data
         self._default = self._data
 
-    @copydoc(BaseParameter.get_default)
+    @copydoc(BaseParameter.f_get_default)
     def get_default(self):
         if self.is_empty():
             raise TypeError('Parameter `%s` is empty cannot access data' % self.full_name)
@@ -1160,7 +1160,7 @@ class Parameter(BaseParameter):
 
         self._locked = True
 
-    @copydoc(BaseParameter.get)
+    @copydoc(BaseParameter.f_get)
     def get(self):
         if self.is_empty():
             raise TypeError('Parameter `%s` is empty cannot access data' % self.full_name)
@@ -1185,7 +1185,7 @@ class Parameter(BaseParameter):
         self._explored_range = []
         self._explored = False
 
-    @copydoc(BaseParameter.empty)
+    @copydoc(BaseParameter.f_empty)
     def empty(self):
 
         if self.locked:
@@ -2116,7 +2116,7 @@ class Result(BaseResult):
         """
         return len(self._data) == 0
 
-    @copydoc(BaseResult.empty)
+    @copydoc(BaseResult.f_empty)
     def empty(self):
         self._data_ = None
 
@@ -2363,7 +2363,7 @@ class SparseResult(Result):
 
     __slots__ = ()
 
-    @copydoc(Result.set_single)
+    @copydoc(Result.f_set_single)
     def set_single(self, name, item):
         if SparseResult.IDENTIFIER in name:
             raise AttributeError('Your result name contains the identifier for sparse matrices,'

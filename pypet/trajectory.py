@@ -4035,23 +4035,23 @@ class Trajectory(DerivedParameterGroup, ResultGroup, ParameterGroup, ConfigGroup
                                  'item to remove.')
 
     @not_in_run
-    @copydoc(ConfigGroup.add_config)
+    @copydoc(ConfigGroup.f_add_config)
     def add_config(self, *args, **kwargs):
         return super(Trajectory, self).add_config(*args, **kwargs)
 
 
     @not_in_run
-    @copydoc(ConfigGroup.add_config_group)
+    @copydoc(ConfigGroup.f_add_config_group)
     def add_config_group(self, *args, **kwargs):
         return super(Trajectory, self).add_config_group(*args, **kwargs)
 
     @not_in_run
-    @copydoc(ParameterGroup.add_parameter)
+    @copydoc(ParameterGroup.f_add_parameter)
     def add_parameter(self, *args, **kwargs):
         return super(Trajectory, self).add_parameter(*args, **kwargs)
 
     @not_in_run
-    @copydoc(ParameterGroup.add_parameter_group)
+    @copydoc(ParameterGroup.f_add_parameter_group)
     def add_parameter_group(self, *args, **kwargs):
         return super(Trajectory, self).add_parameter_group(*args, **kwargs)
 

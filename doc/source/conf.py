@@ -313,3 +313,18 @@ def no_op_wraps(func):
     return wrapper
 
 functools.wraps = no_op_wraps
+
+
+# Avoid double documentation
+import pypet
+all = pypet.__all__
+for name in all:
+    item = getattr(pypet, name)
+for name in pypet.__all__:
+    item = getattr(pypet, name)
+    if hasattr(item, '__api__'):
+        for api_name in item.__api__:
+            try:
+                delattr(item, api_name)
+            except AttributeError:
+                pass

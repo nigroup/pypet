@@ -60,6 +60,8 @@ pypet 0.1b.13
 
 *   `f_` and `v_` are no longer mandatory prefixes.
 
+*   `v_crun` has been renamed to `v_crun_name`
+
 
 pypet 0.1b.12
 

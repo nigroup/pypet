@@ -93,19 +93,19 @@ def write_into_shared_storage(traj):
     with StorageContextManager(traj) as cm:
         t1 = tabs.t1
         row = t1.row
-        row['run_name'] = compat.tobytes(traj.crun)
+        row['run_name'] = compat.tobytes(traj.crun_name)
         row['idx'] = idx
         row.append()
         t1.flush()
 
     t2 = tabs.t2
     row = t2[idx]
-    if row['run_name'] != compat.tobytes(traj.crun):
+    if row['run_name'] != compat.tobytes(traj.crun_name):
         raise RuntimeError('Names in run table do not match, Run: %s != %s' % (row['run_name'],
-                                                                                   traj.crun) )
+                                                                                   traj.crun_name) )
 
     df = traj.df
-    df.append(pd.DataFrame({'idx':[traj.idx], 'run_name':traj.crun}))
+    df.append(pd.DataFrame({'idx':[traj.idx], 'run_name':traj.crun_name}))
 
 
 @unittest.skipIf(ptcompat.tables_version < 3, 'Only supported for PyTables 3 and newer')

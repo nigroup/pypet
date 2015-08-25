@@ -166,7 +166,7 @@ class NNTreeNode(WithAnnotations):
         return not self._is_leaf
 
     @deprecated(msg='Please use property `v_is_root` instead.')
-    def is_root(self):
+    def f_is_root(self):
         """Whether the group is root (True for the trajectory and a single run object)
 
         DEPRECATED: Please use property v_is_root!

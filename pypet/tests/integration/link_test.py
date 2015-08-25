@@ -184,7 +184,7 @@ class LinkMergeTest(TrajectoryComparator):
         self.traj1.load(load_data=2)
 
         for run in self.traj1.get_run_names():
-            self.traj1.as_run(run)
+            self.traj1.set_crun(run)
             idx = self.traj1.idx
             param = self.traj1['test.crun.gg']
             if idx < old_length:
@@ -235,7 +235,7 @@ class LinkMergeTest(TrajectoryComparator):
         self.traj1.load(load_data=2)
 
         for run in self.traj1.get_run_names():
-            self.traj1.as_run(run)
+            self.traj1.set_crun(run)
             idx = self.traj1.idx
             param = self.traj1['test.crun.gg']
             if idx < prev_old_length or old_length <= idx < prev_old_length + old_length:

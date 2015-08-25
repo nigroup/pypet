@@ -291,7 +291,7 @@ class BrianResult(Result):
         assert (storage_mode == BrianResult.STRING_MODE or storage_mode == BrianResult.FLOAT_MODE)
         self._storage_mode = storage_mode
 
-    @copydoc(Result.set_single)
+    @copydoc(Result.f_set_single)
     def set_single(self, name, item):
         if BrianResult.IDENTIFIER in name:
             raise AttributeError('Your result name contains the identifier for brian data,'

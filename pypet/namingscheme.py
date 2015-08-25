@@ -1,3 +1,6 @@
+"""Module that add prefix functionality"""
+
+
 __author__ = 'Robert Meyer'
 
 

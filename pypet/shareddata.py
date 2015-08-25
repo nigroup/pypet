@@ -15,13 +15,13 @@ import pandas as pd
 import numpy as np
 
 import pypet.pypetconstants as pypetconstants
-from pypet.pypetlogging import HasLogger
+from pypet.namingscheme import PypetNaming
 from pypet.utils.decorators import with_open_store
 from pypet.parameter import ObjectTable, Result
 from pypet.naturalnaming import KnowsTrajectory
 
 
-class StorageContextManager(HasLogger):
+class StorageContextManager(PypetNaming):
     def __init__(self, trajectory):
         self._traj = trajectory
 
@@ -104,17 +104,43 @@ def make_shared_result(result, key, trajectory, new_class=None):
     return result
 
 
-class SharedData(HasLogger):
+class SharedData(PypetNaming):
+
+    __slots__ = ('_name', '_parent', '_traj')
 
     FLAG = None
 
     def __init__(self, name=None, parent=None, trajectory=None, add_to_parent=False):
         self._set_logger()
-        self.name = name
-        self.parent = parent
-        self.traj = trajectory
+        self._name = name
+        self._parent = parent
+        self._traj = trajectory
         if add_to_parent:
             self.parent[name] = self
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        self._name = name
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @parent.setter
+    def parent(self, parent):
+        self._parent = parent
+
+    @property
+    def traj(self):
+        return self._traj
+
+    @traj.setter
+    def traj(self, traj):
+        self._traj = traj
 
     def _check_state(self):
         if self.traj is None:
@@ -129,6 +155,7 @@ class SharedData(HasLogger):
             raise TypeError('Please pass the name of the shared data, via'
                             '`shared_data.name = name`, otherwise you cannot '
                             'access the data.')
+
     def _store_parent(self):
         self._check_state()
         if not self.parent._stored:
@@ -218,10 +245,14 @@ class SharedArray(SharedData):
 
 class SharedCArray(SharedArray):
 
+    __slots__ = ()
+
     FLAG = pypetconstants.CARRAY
 
 
 class SharedEArray(SharedArray):
+
+    __slots__ = ()
 
     FLAG = pypetconstants.EARRAY
 
@@ -231,10 +262,14 @@ class SharedEArray(SharedArray):
 
 class SharedVLArray(SharedEArray):
 
+    __slots__ = ()
+
     FLAG = pypetconstants.VLARRAY
 
 
 class SharedTable(SharedData):
+
+    __slots__ = ()
 
     FLAG = pypetconstants.TABLE
 
@@ -445,6 +480,8 @@ class SharedTable(SharedData):
 
 
 class SharedPandasFrame(SharedData):
+
+    __slots__ = ()
 
     FLAG = pypetconstants.FRAME
 

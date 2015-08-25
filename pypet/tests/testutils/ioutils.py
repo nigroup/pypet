@@ -284,10 +284,12 @@ class LambdaTestDiscoverer(unittest.TestLoader, HasLogger):
         for case in flattened_suite:
             test_name = str(case).split(' ')[0]
             class_name = case.__class__.__name__
-            if not hasattr(case, 'tags'):
-                tags = set()
-            else:
+            if hasattr(case, 'tags'):
                 tags = self._input2set(case.tags)
+            elif hasattr(case, 'TAGS'):
+                tags = self._input2set(case.TAGS)
+            else:
+                tags = set()
 
             combined = (class_name, test_name, tuple(tags))
             if combined in found_set:

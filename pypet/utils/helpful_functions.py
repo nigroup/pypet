@@ -335,5 +335,3 @@ def port_to_tcp(port=None):
         socket_.close()
         context.term()
     return address + ':' + str(port)
-
-

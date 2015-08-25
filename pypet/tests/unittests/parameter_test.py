@@ -96,7 +96,7 @@ class ParameterTest(TrajectoryComparator):
                 # Trigger a warning.
                 self.assertEqual(param.parameter, param.is_parameter)
                 self.assertEqual(param.leaf, param.is_leaf)
-                self.assertEqual(param.is_root(), param.is_root)
+                self.assertEqual(param.f_is_root(), param.is_root)
                 self.assertEqual(param.fast_accessible, param.supports_fast_access())
                 # Verify some things
                 assert len(warnings_list) == 4
