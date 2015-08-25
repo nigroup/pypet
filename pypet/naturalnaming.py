@@ -2820,7 +2820,7 @@ class NNGroupNode(NNTreeNode, KnowsTrajectory):
 
     def __getattr__(self, name):
         if isinstance(name, compat.base_type) and name.startswith('_'):
-            raise AttributeError('Trajectory node does not contain `%s`' % name)
+            raise AttributeError('`%s` is not part of your trajectory or it\'s tree.' % name)
 
         return self._nn_interface._get(self, name,
                                    fast_access=self.root.fast_access,

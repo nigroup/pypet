@@ -28,6 +28,7 @@ from pypet.shareddata import SharedArray, SharedCArray, SharedEArray,\
     SharedVLArray, SharedPandasFrame, SharedTable, SharedResult,\
     StorageContextManager, make_ordinary_result, make_shared_result
 from pypet.slots import HasSlots
+from pypet.namingscheme import PypetNaming
 from pypet.utils.trajectory_utils import merge_all_in_folder
 from pypet.utils.decorators import manual_run
 from pypet.utils.pypettest import test
@@ -65,6 +66,7 @@ __all__ = [
     VersionMismatchError.__name__,
     GitDiffError.__name__,
     HasSlots.__name__,
+    PypetNaming.__name__,
     HasLogger.__name__,
     rename_log_file.__name__,
     cartesian_product.__name__,

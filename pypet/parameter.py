@@ -852,6 +852,10 @@ class Parameter(BaseParameter):
 
     def __getattr__(self, item):
         """Allows to query for `.data` as an attribute"""
+        try:
+            return super(Parameter, self).__getattr__(item)
+        except AttributeError:
+            pass
         if item == 'data':
             return self.get()
         elif item == 'default':

@@ -60,6 +60,17 @@ class PypetNaming(HasLogger):
         """Returns all elements regardless of API"""
         return super(PypetNaming, self).__dir__()
 
+    def __getattr__(self, item):
+        if item.startswith('v_'):
+            short = item[2:]
+            if short in self.__all_slots__:
+                return getattr(self, short)
+            try:
+                return self.__dict__[short]
+            except KeyError:
+                pass
+        raise AttributeError('`%s` objct has not attribute '
+                                 '`%s`' % (self.__class__.__name__, item))
 
 # class Test(PypetNamingScheme):
 #
