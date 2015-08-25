@@ -61,9 +61,10 @@ def euler_scheme(traj, diff_func):
 # to simply keep track of the source code we use ('git' would be, of course, the better solution
 # but this is just an illustrative example)
 class FunctionParameter(Parameter):
-    # We need to override the `f_set` function and simply extract the the source code if our
+    # We need to override the `set` (`f_set`) function and simply
+    # extract the the source code if our
     # item is callable and store this instead.
-    def f_set(self, data):
+    def set(self, data):
         if callable(data):
             data = inspect.getsource(data)
         return super(FunctionParameter, self).f_set(data)

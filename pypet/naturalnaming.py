@@ -446,7 +446,7 @@ class NaturalNamingInterface(HasLogger):
         self._links_count =  {} # Dictionary of how often a link exists
 
         # Context Manager to disable logging for auto-loading
-        self._disable_logger = DisableAllLogging()
+        self._disable_logging = DisableAllLogging()
 
         # List of names that are taboo. The user cannot create parameters or results that
         # contain these names.
@@ -2203,7 +2203,7 @@ class NaturalNamingInterface(HasLogger):
         if run_idx > -1:
             # If we count the wildcard we have to perform the search twice,
             # one with a run name and one with the dummy:
-            with self._disable_logger:
+            with self._disable_logging:
                 try:
                     if wildcard_positions:
                         for wildcard_pos, wildcard in wildcard_positions:

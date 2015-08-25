@@ -1413,7 +1413,8 @@ class Environment(PypetNaming):
 
             config_name = 'environment.%s.clean_up_runs' % self._name
             self._traj.add_config(Parameter, config_name, self._clean_up_runs,
-                                    comment='Whether or not results should be removed after the '
+                                    comment='Whether or not results should be removed '
+                                            'after the '
                                             'completion of a single run. '
                                             'You are not advised to set this '
                                             'to `False`. Only do it if you know what you are '
@@ -1425,15 +1426,15 @@ class Environment(PypetNaming):
                                             'be created. If yes, everything is '
                                             'handled by `dill`.').lock()
 
-        config_name = 'environment.%s.trajectory.name' % self.name
+        config_name = 'environment.%s.trajectory.traj_name' % self.name
         self._traj.add_config(Parameter, config_name, self.trajectory.name,
                                 comment='Name of trajectory').lock()
 
-        config_name = 'environment.%s.trajectory.timestamp' % self.name
+        config_name = 'environment.%s.trajectory.traj_timestamp' % self.name
         self._traj.add_config(Parameter, config_name, self.trajectory.timestamp,
                                 comment='Timestamp of trajectory').lock()
 
-        config_name = 'environment.%s.timestamp' % self.name
+        config_name = 'environment.%s.env_timestamp' % self.name
         self._traj.add_config(Parameter, config_name, self.timestamp,
                                 comment='Timestamp of environment creation').lock()
 
@@ -1444,8 +1445,8 @@ class Environment(PypetNaming):
         config_name = 'environment.%s.automatic_storing' % self.name
         if not self._traj.contains('config.' + config_name):
             self._traj.add_config(Parameter, config_name, self._automatic_storing,
-                                    comment='If trajectory should be stored automatically in the '
-                                            'end.').lock()
+                                    comment='If trajectory should be stored automatically '
+                                            'in the end.').lock()
 
         try:
             config_name = 'environment.%s.script' % self.name
@@ -2422,7 +2423,7 @@ class Environment(PypetNaming):
                     self._traj.add_config(Parameter, config_name, wildcard,
                                     comment='Wildcard symbol for the wildcard function').lock()
             if hasattr(wc_function, '__name__'):
-                config_name = ('environment.%s.wildcards.function_%d.name' %
+                config_name = ('environment.%s.wildcards.function_%d.function_name' %
                                 (self.name, idx))
                 if not self._traj.contains('config.' + config_name):
                     self._traj.add_config(Parameter, config_name, wc_function.__name__,

@@ -1767,10 +1767,10 @@ class Trajectory(DerivedParameterGroup, ResultGroup, ParameterGroup, ConfigGroup
         # Load all parameters of the current and the other trajectory
         if self._stored:
             # To suppress warnings if nothing needs to be loaded
-            with self._nn_interface._disable_logger:
+            with self._nn_interface._disable_logging:
                 self.load_items(self._parameters.keys(), only_empties=True)
         if other_trajectory._stored:
-            with self._nn_interface._disable_logger:
+            with self._nn_interface._disable_logging:
                 other_trajectory.load_items(other_trajectory._parameters.keys(),
                                               only_empties=True)
 
@@ -1784,11 +1784,13 @@ class Trajectory(DerivedParameterGroup, ResultGroup, ParameterGroup, ConfigGroup
         if 'derived_parameters' in self:
             my_traj_dpars = self._derived_parameters
             if self._stored:
-                self.load_items(my_traj_dpars.keys(), only_empties=True)
+                with self._nn_interface._disable_logging:
+                    self.load_items(my_traj_dpars.keys(), only_empties=True)
             allmyparams.update(my_traj_dpars)
             other_traj_dpars = other_trajectory._derived_parameters
             if other_trajectory._stored:
-                other_trajectory.load_items(other_traj_dpars.keys(), only_empties=True)
+                with self._nn_interface._disable_logging:
+                    other_trajectory.load_items(other_traj_dpars.keys(), only_empties=True)
             allotherparams.update(other_traj_dpars)
 
         # Check if the trajectories have the same parameters:
@@ -2151,68 +2153,71 @@ class Trajectory(DerivedParameterGroup, ResultGroup, ParameterGroup, ConfigGroup
         if keep_info:
             merge_name = 'merge_%s_%s' % (short_hexsha, formatted_time)
 
-            config_name = 'merge.%s.merged_runs' % merge_name
+            config_name = 'merging.%s.merged_runs' % merge_name
             self.add_config(config_name, len(used_runs),
                               comment='Number of merged runs')
 
-            config_name = 'merge.%s.timestamp' % merge_name
+            config_name = 'merging.%s.merge_timestamp' % merge_name
             self.add_config(config_name, timestamp,
                               comment='Timestamp of merge')
 
-            config_name = 'merge.%s.hexsha' % merge_name
+            config_name = 'merging.%s.hexsha' % merge_name
             self.add_config(config_name, hexsha,
                               comment='SHA-1 identifier of the merge')
 
-            config_name = 'merge.%s.remove_duplicates' % merge_name
+            config_name = 'merging.%s.remove_duplicates' % merge_name
             self.add_config(config_name, remove_duplicates,
                               comment='Option to remove duplicate entries')
 
             if original_ignore_data:
-                config_name = 'merge.%s.ignore_data' % merge_name
+                config_name = 'merging.%s.ignore_data' % merge_name
                 self.add_config(config_name, tuple(original_ignore_data),
                                   comment='Data to ignore during merge')
 
-            config_name = 'merge.%s.length_before_merge' % merge_name
+            config_name = 'merging.%s.length_before_merge' % merge_name
             self.add_config(config_name, len(self),
                               comment='Length of trajectory before merge')
 
-            self.config.merge.comment = 'Settings and information of the different merges'
+            self.config.merging.comment = 'Settings and information of the different merges'
 
             if self.version != VERSION:
-                config_name = 'merge.%s.version' % merge_name
+                config_name = 'merging.%s.version' % merge_name
                 self.add_config(config_name, self.version,
                                   comment='Pypet version if it differs from the version'
                                           ' of the trajectory')
 
             if trial_parameter is not None:
-                config_name = 'merge.%s.trial_parameter' % merge_name
+                config_name = 'merging.%s.trial_parameter' % merge_name
                 self.add_config(config_name, len(other_trajectory),
                                   comment='Name of trial parameter')
 
             if keep_other_trajectory_info:
 
                 if other_trajectory.version != self.version:
-                    config_name = 'merge.%s.other_trajectory.version' % merge_name
+                    config_name = 'merging.%s.other_trajectory.version' % merge_name
                     self.add_config(config_name, other_trajectory.version,
-                                      comment='The version of pypet you used to manage the other'
-                                              ' trajectory. Only added if other trajectory\'s'
-                                              ' version differs from current trajectory version.')
+                                      comment='The version of pypet you used to '
+                                              'manage the other '
+                                              'trajectory. Only added if other trajectory\'s '
+                                              'version differs from current trajectory '
+                                              'version.')
 
-                config_name = 'merge.%s.other_trajectory.name' % merge_name
+                config_name = 'merging.%s.other_trajectory.traj_name' % merge_name
                 self.add_config(config_name, other_trajectory.name,
-                                  comment='Name of other trajectory merged into the current one')
+                                  comment='Name of other trajectory merged into the '
+                                          'current one')
 
-                config_name = 'merge.%s.other_trajectory.timestamp' % merge_name
+                config_name = 'merging.%s.other_trajectory.traj_timestamp' % merge_name
                 self.add_config(config_name, other_trajectory.timestamp,
                                   comment='Timestamp of creation of other trajectory '
                                           'merged into the current one')
 
-                config_name = 'merge.%s.other_trajectory.length' % merge_name
+                config_name = 'merging.%s.other_trajectory.length' % merge_name
                 self.add_config(config_name, len(other_trajectory),
                                   comment='Length of other trajectory')
 
                 if other_trajectory.comment:
-                    config_name = 'merge.%s.other_trajectory.comment' % merge_name
+                    config_name = 'merging.%s.other_trajectory.traj_comment' % merge_name
                     self.add_config(config_name, other_trajectory.comment,
                                       comment='Comment of other trajectory')
 
@@ -2486,7 +2491,7 @@ class Trajectory(DerivedParameterGroup, ResultGroup, ParameterGroup, ConfigGroup
             self._logger.info('Merging config successful!')
 
         # Merge meta data of previous merges
-        if 'config.merge' in other_trajectory:
+        if 'config.merging' in other_trajectory:
 
             self._logger.info('Merging merge config!')
             merge_node = other_trajectory.get('config.merge')
@@ -2517,7 +2522,7 @@ class Trajectory(DerivedParameterGroup, ResultGroup, ParameterGroup, ConfigGroup
 
             if other_instance.is_empty():
                 # To suppress warnings if nothing needs to be loaded
-                with self._nn_interface._disable_logger:
+                with self._nn_interface._disable_logging:
                     other_trajectory.load_item(other_instance)
 
             if not self.contains(new_key):

@@ -53,7 +53,7 @@ try:
 except ImportError:
     gitversion = 'N/A'
 
-VERSIONS_TO_STORE = {'pypet': VERSION, 'python': compat.python_version_string,
+VERSIONS_TO_STORE = {'pypet': VERSION, 'Python': compat.python_version_string,
                      'scipy': scipyversion, 'numpy': numpyversion, 'PyTables': tablesversion,
                      'pandas': pandasversion, 'Sumatra': sumatraversion,
                      'dill': dillversion, 'GitPython': gitversion,
