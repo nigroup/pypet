@@ -2,6 +2,9 @@
 pypet (NI Group Fork)
 =====================
 
+**THIS IS JUST A FORK OF THE ORIGINAL TO HAVE IT ASSOCIATED WITH THE NI GROUP**
+
+
 [![Travis Build Status](https://travis-ci.org/SmokinCaterpillar/pypet.svg?branch=master)](https://travis-ci.org/SmokinCaterpillar/pypet)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/9amhj3iyf105xa2y/branch/master?svg=true)](https://ci.appveyor.com/project/SmokinCaterpillar/pypet/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/SmokinCaterpillar/pypet/badge.svg?branch=master)](https://coveralls.io/github/SmokinCaterpillar/pypet?branch=master)
