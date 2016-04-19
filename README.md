@@ -1,6 +1,6 @@
-=====
-pypet
-=====
+=====================
+pypet (NI Group Fork)
+=====================
 
 [![Travis Build Status](https://travis-ci.org/SmokinCaterpillar/pypet.svg?branch=master)](https://travis-ci.org/SmokinCaterpillar/pypet)
 [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/9amhj3iyf105xa2y/branch/master?svg=true)](https://ci.appveyor.com/project/SmokinCaterpillar/pypet/branch/master)
