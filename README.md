@@ -127,8 +127,7 @@ These are standard python packages, so chances are high that they are already in
 By the way, in case you use the python package manager ``pip``
 you can list all installed packages with ``pip freeze``.
 
-Next, simply install *pypet* via ``pip install --pre pypet``
-(``--pre`` since the current version is still *beta*)
+Next, simply install *pypet* via ``pip install pypet``
 
 **Or**
 
@@ -390,7 +389,7 @@ If the folder cannot be created, the program defaults to `tempfile.gettempdir()`
 Running all tests can take up to 20 minutes. The test suite encompasses more than **1000** tests
 and has a code coverage of about **90%**!
 
-Moreover, *pypet* is constantly tested with Python 2.6, 2.7, 3.3 and 3.4 for **Linux** using
+Moreover, *pypet* is constantly tested with Python 2.6, 2.7, 3.3, 3.4 and 3.5 for **Linux** using
 Travis-CI. Testing for **Windows** platforms is performed via Appveyor.
 The source code is available at https://github.com/SmokinCaterpillar/pypet/.
 
