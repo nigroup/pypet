@@ -27,7 +27,7 @@ requires parallel processing (see :class:`~pypet.brian2.network.NetworkManager`)
 
 __author__ = 'Robert Meyer'
 
-from brian2 import Network, reinit, second
+from brian2 import Network, second
 
 from pypet.pypetlogging import HasLogger
 
@@ -691,10 +691,10 @@ class NetworkManager(HasLogger):
         if self._pre_built:
             if self._pre_run and hasattr(self._network, 'restore'):
                 self._network.restore('pre_run')
+                # Temprorary fix for https://github.com/brian-team/brian2/issues/681
+                self._network.store('pre_run')
             self._run_network(traj)
         else:
-            if self._network is not None and hasattr(self._network, 'reinit'):
-                self._network.reinit()
             self._run_network(traj)
 
     def _pretty_print_explored_parameters(self, traj):
